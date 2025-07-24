@@ -1,0 +1,24 @@
+<!-- 주문일시, 메뉴1이름, 메뉴1수량, 메뉴2이름, 메뉴2수량, ..., 결제금액  -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="/main.css" />
+  </head>
+  <body class="grey-bg">
+    <%- include("nav.ejs") %>
+    <div class="white-bg">
+      <% orders.forEach(order => { %>
+      <div class="list-box">
+        <h4><%= order.time %></h4>
+        <% order.items.forEach(item => { %>
+        <p><%= item.name %> (<%= item.qty %>)</p>
+        <% }) %>
+        <p>결제금액: <%= order.totalPrice %>원</p>
+      </div>
+      <% }) %>
+    </div>
+  </body>
+</html>

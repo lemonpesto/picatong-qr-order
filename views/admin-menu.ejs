@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>메뉴 관리</title>
+    <link rel="stylesheet" href="/main.css" />
+  </head>
+  <body>
+    <h1>📋 메뉴 관리</h1>
+    <table id="menuTable">
+      <thead>
+        <tr>
+          <th>메뉴명</th>
+          <th>가격</th>
+          <th>카테고리</th>
+          <th>상태</th>
+          <th>이미지 URL</th>
+          <th>삭제</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% menus.forEach(menu => { %>
+        <tr data-id="<%= menu._id %>">
+          <td><%= menu.name %></td>
+          <td><%= menu.price %></td>
+          <td><%= menu.category %></td>
+          <td><%= menu.status %></td>
+          <td><%= menu.image || "-" %></td>
+          <td><button class="deleteBtn">삭제</button></td>
+        </tr>
+        <% }) %>
+
+        <!-- 새 메뉴 추가 행 -->
+        <tr id="newMenuRow">
+          <td><input id="newName" placeholder="메뉴명" /></td>
+          <td><input id="newPrice" type="number" placeholder="가격" /></td>
+          <td>
+            <select id="newCategory">
+              <option>칵테일</option>
+              <option>메인메뉴</option>
+              <option>사이드메뉴</option>
+              <option>주류/음료</option>
+            </select>
+          </td>
+          <td>
+            <select id="newStatus">
+              <option>판매 중</option>
+              <option>품절</option>
+            </select>
+          </td>
+          <td><input id="newImage" placeholder="이미지 URL" /></td>
+          <td><button id="addMenuBtn">추가</button></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <script src="/js/admin.js"></script>
+  </body>
+</html>
