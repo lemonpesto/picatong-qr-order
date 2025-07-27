@@ -1,36 +1,20 @@
-document.querySelectorAll('.list-box').forEach((item) => {
-  item.addEventListener('click', () => {
-    const name = item.dataset.name;
-    const price = item.dataset.price;
+async function updateCartButton() {
+  try {
+    const res = await fetch('/cart/summary');
+    const data = await res.json(); // { total: 12000, count: 3 }
 
-    document.getElementById('sheet-name').textContent = name;
-    document.getElementById('qty').textContent = '1';
-    document.getElementById('bottom-sheet').classList.remove('hidden');
-    document.getElementById('bottom-sheet').classList.add('show');
-  });
-});
+    const viewCart = document.getElementById('view-cart');
+    if (data.count > 0) {
+      viewCart.textContent = `총 ${data.total.toLocaleString()}원 장바구니 보기 (${data.count})`;
+      viewCart.classList.remove('hidden');
+    } else {
+      viewCart.classList.add('hidden');
+    }
+  } catch (err) {
+    console.error('장바구니 정보 가져오기 실패:', err);
+  }
+}
 
-document.getElementById('close-sheet').addEventListener('click', () => {
-  document.getElementById('bottom-sheet').classList.remove('show');
-  document.getElementById('bottom-sheet').classList.add('hidden');
-});
-
-document.getElementById('plus').addEventListener('click', () => {
-  let qty = parseInt(document.getElementById('qty').textContent);
-  document.getElementById('qty').textContent = qty + 1;
-});
-
-document.getElementById('minus').addEventListener('click', () => {
-  let qty = parseInt(document.getElementById('qty').textContent);
-  if (qty > 1) document.getElementById('qty').textContent = qty - 1;
-});
-
-document.getElementById('add-to-cart').addEventListener('click', () => {
-  const name = document.getElementById('sheet-name').textContent;
-  const qty = document.getElementById('qty').textContent;
-  alert(`${name} ${qty}개 장바구니에 담겼습니다 (장바구니 기능은 아직 미구현)`);
-
-  // 나중에 ajax로 장바구니에 담기 구현할 부분
-  document.getElementById('bottom-sheet').classList.remove('show');
-  document.getElementById('bottom-sheet').classList.add('hidden');
+window.addEventListener('DOMContentLoaded', () => {
+  updateCartButton();
 });

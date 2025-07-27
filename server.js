@@ -127,8 +127,19 @@ app.get('/menu', async (요청, 응답) => {
 });
 
 app.post('/cart/add', async (요청, 응답) => {
-  await db.collection('cart').insertOne({ menuId: 요청.query.menuid, menuName: 요청.body.name, price: 요청.body.price, qty: parseInt(요청.body.qty) });
-  응답.send('메뉴의 수량을 변경했습니다.');
+  console.log(요청.user);
+  const tableId = 요청.user._id; // 세션에서 tableId 추출
+  const menuId = 요청.query.menuid;
+  const { name, price, qty } = 요청.body;
+
+  await db.collection('cart').insertOne({
+    tableId: new ObjectId(tableId),
+    menuId,
+    menuName: name,
+    price,
+    qty: parseInt(qty),
+  });
+  응답.send('메뉴를 추가했습니다.');
 });
 
 app.post('/cart/update', async (요청, 응답) => {
@@ -152,10 +163,26 @@ app.get('/cart', async (요청, 응답) => {
   }
 });
 
-app.get('/order-detail/:id', async (요청, 응답) => {
+app.get('/cart/summary', async (요청, 응답) => {
+  const tableId = 요청.user._id;
+
+  const items = await db
+    .collection('cart')
+    .find({ tableId: new ObjectId(tableId) })
+    .toArray();
+
+  const total = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const count = items.reduce((sum, item) => sum + item.qty, 0);
+
+  응답.json({ total, count });
+});
+
+app.get('/orders/history', async (요청, 응답) => {
+  const tableId = 요청.user._id;
   try {
-    let result = await db.collection('orders').findOne({ tableId: new ObjectId(요청.params.id) });
-    응답.render('order-detail.ejs', { orders: result });
+    let result = await db.collection('orders').find({ tableId: new ObjectId(tableId) });
+    console.log(result);
+    응답.render('orders-history.ejs', { orders: result });
   } catch {
     응답.status(404).send('이상한 url 입력함');
   }
