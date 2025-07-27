@@ -32,7 +32,6 @@ body {
   position: sticky;
   top: 0;
   z-index: 9;
-  border-bottom: 1px solid #eee;
 }
 
 .category-button {
@@ -103,25 +102,30 @@ body {
 }
 
 .view-cart-bar {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+
   background: transparent;
   display: flex;
   justify-content: center;
   overflow-x: auto;
-  padding: 10px 15px;
-  gap: 10px;
-  position: sticky;
-  bottom: 0;
+  padding: 10px;
+
   z-index: 100;
 }
 
 .view-cart-button {
+  text-align: center;
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
   background-color: #f6a829;
   color: white;
-  padding: 12px 18px;
-  border-radius: 8px;
-  font-size: 15px;
-  text-align: center;
-  z-index: 100;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
 }
 
 /* 바텀 시트 전체 */
