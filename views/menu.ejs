@@ -3,37 +3,56 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>메뉴판</title>
     <link rel="stylesheet" href="/main.css" />
+    <script src="https://kit.fontawesome.com/a3ff865f92.js" crossorigin="anonymous"></script>
   </head>
   <body class="grey-bg">
     <%- include("nav.ejs") %>
-    <div class="white-bg">
-      <% for(let i = 0; i < 메뉴목록.length; i++) { %>
-      <div class="list-box">
-        <h4>
-          <a href="/detail/<%=메뉴목록[i]._id%>"><%=메뉴목록[i].name%></a>
-          <a href="/edit/<%=메뉴목록[i]._id%>">✏️</a>
-          <span class="delete" data-id="<%=메뉴목록[i]._id%>">🗑️</span>
-        </h4>
-        <p><%=메뉴목록[i].price%>원</p>
-      </div>
-      <% } %>
+    <!-- 카테고리 목차 -->
+    <div class="category-bar">
+      <% categories.forEach((cat, i) => { %>
+      <button class="category-button" data-target="section-<%= cat.internalName %>"><%= cat.displayName %></button>
+      <% }) %>
     </div>
-    <script>
-      for (let i = 0; i < "<%=메뉴목록.length%>"; i++) {
-        document
-          .querySelectorAll(".delete")
-          [i].addEventListener("click", function (e) {
-            fetch("/delete?docid=" + e.target.dataset.id, {
-              method: "DELETE",
-            })
-              .then((r) => r.text())
-              .then((r) => {
-                e.target.parentElement.parentElement.style.display = "none";
-              });
-          });
-      }
-    </script>
+
+    <!-- 메뉴 리스트 -->
+    <% categories.forEach((cat, i) => { %>
+    <div id="section-<%= cat.internalName %>" class="menu-section">
+      <h3><%= cat.displayName %></h3>
+      <% menus.filter(m => m.category === cat.internalName).forEach(menu => { %>
+      <div class="list-box">
+        <h4 data-name="<%= menu.name %>"><%= menu.name %></h4>
+        <p class="price" data-price="<%= menu.price %>"><%= menu.price %>원</p>
+        <p class="description"><%= menu.description || '' %></p>
+      </div>
+      <% }) %>
+    </div>
+    <% }) %>
+
+    <!-- 바텀 시트 -->
+    <div id="bottom-sheet" class="bottom-sheet hidden">
+      <div class="bottom-sheet-content">
+        <div class="sheet-header">
+          <h4 id="sheet-name">메뉴명</h4>
+          <button id="close-sheet">✕</button>
+        </div>
+        <div class="sheet-qty-row">
+          <span class="qty-label">수량</span>
+          <div class="qty-control">
+            <button class="qty-btn minus">
+              <i class="fa-solid fa-trash"></i>
+              <span class="minus-text" style="display: none">-</span>
+            </button>
+            <span id="qty">1</span>
+            <button id="qty-btn plus">+</button>
+          </div>
+        </div>
+        <button id="add-to-cart" class="cart-button">장바구니에 담기</button>
+      </div>
+    </div>
+
+    <script src="/menu.js"></script>
+    <script src="/menu-scroll.js"></script>
   </body>
 </html>

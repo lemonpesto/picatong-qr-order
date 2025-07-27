@@ -1,15 +1,17 @@
 const express = require('express');
 const app = express();
-const session = require('express-session');
-const passport = require('passport');
-const LocalStrategy = require('passport-local');
-const MongoStore = require('connect-mongo');
+const { MongoClient, ObjectId } = require('mongodb');
 require('dotenv').config();
 
 app.use(express.static(__dirname + '/public'));
 app.set('view engine', 'ejs');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+const session = require('express-session');
+const passport = require('passport');
+const LocalStrategy = require('passport-local');
+const MongoStore = require('connect-mongo');
 
 app.use(passport.initialize());
 app.use(
@@ -26,11 +28,32 @@ app.use(
 );
 app.use(passport.session());
 
-const { MongoClient, ObjectId } = require('mongodb');
+const { S3Client } = require('@aws-sdk/client-s3');
+const multer = require('multer');
+const multerS3 = require('multer-s3');
+const s3 = new S3Client({
+  region: 'ap-northeast-2',
+  credentials: {
+    accessKeyId: process.env.S3_KEY,
+    secretAccessKey: process.env.S3_SECRET,
+  },
+});
+
+const upload = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: 'lemonpesto-qrorder',
+    key: function (요청, file, cb) {
+      cb(null, Date.now().toString()); //업로드시 파일명 변경가능
+    },
+  }),
+});
+
+let connectDB = require('./database.js');
 
 let db;
-const url = process.env.DB_URL;
-new MongoClient(url).connect().then((client) => {
+connectDB
+  .then((client) => {
     console.log('DB연결성공');
     db = client.db('picatong-qr-order');
     app.listen(process.env.PORT, () => {
@@ -68,7 +91,7 @@ passport.deserializeUser(async (table, done) => {
 });
 
 app.get('/login', async (요청, 응답, next) => {
-  const { table, key } = 요청.query; // QR을 통해 ?table=4&key=abc123 접속할 것.
+  const { table, key } = 요청.query; // QR을 통해 /login?table=4&key=abc123 접속할 것.
   passport.authenticate('local', (err, user, info) => {
     if (err) return 응답.status(500).json(err);
     if (!user) return 응답.status(401).json(info.message);
@@ -81,16 +104,52 @@ app.get('/login', async (요청, 응답, next) => {
 
 function checkLogin(요청, 응답, next) {
   if (!요청.user) {
-    응답.send('다시 QR을 찍어주세요.');
+    return 응답.send('다시 QR을 찍어주세요.');
   }
   next();
 }
-
 app.use(checkLogin);
 
-app.get('/', async (요청, 응답) => {
-  let result = await db.collection('menus').find().toArray();
-  응답.render('menu.ejs', { 메뉴목록: result });
+// app.get('/', async (요청, 응답) => {
+//   let result = await db.collection('menus').find().toArray();
+//   응답.render('menu.ejs', { 메뉴목록: result });
+// });
+
+app.get('/menu', async (요청, 응답) => {
+  try {
+    let menus = await db.collection('menus').find().toArray();
+    let categories = await db.collection('categories').find().sort({ order: 1 }).toArray();
+    응답.render('menu.ejs', { menus, categories });
+  } catch (e) {
+    console.error(e);
+    응답.status(500).send('서버 오류');
+  }
+});
+
+app.post('/cart/add', async (요청, 응답) => {
+  await db.collection('cart').insertOne({ menuId: 요청.query.menuid, menuName: 요청.body.name, price: 요청.body.price, qty: parseInt(요청.body.qty) });
+  응답.send('메뉴의 수량을 변경했습니다.');
+});
+
+app.post('/cart/update', async (요청, 응답) => {
+  await db.collection('cart').updateOne({ menuId: 요청.query.menuid }, { $set: { qty: parseInt(요청.body.qty) } });
+  응답.send('메뉴의 수량을 변경했습니다.');
+});
+
+app.delete('/cart/delete', async (요청, 응답) => {
+  await db.collection('cart').deleteOne({ menuId: 요청.query.menuid });
+  응답.send('메뉴를 삭제했습니다.');
+});
+
+app.get('/cart', async (요청, 응답) => {
+  try {
+    let result = await db.collection('menus').find().toArray();
+    console.log('menus:', result);
+    응답.render('menu.ejs', { menus: result });
+  } catch (e) {
+    console.error(e);
+    응답.status(500).send('서버 오류');
+  }
 });
 
 app.get('/order-detail/:id', async (요청, 응답) => {
@@ -102,8 +161,4 @@ app.get('/order-detail/:id', async (요청, 응답) => {
   }
 });
 // ------ 관리자 페이지 ------ //
-
-app.get('/admin/menu', async (요청, 응답) => {
-  let result = await db.collection('menus').find().toArray();
-  응답.render('admin-menu.ejs', { menus: result });
-});
+app.use('/admin', require('./routes/admin.js'));

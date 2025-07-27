@@ -31,26 +31,28 @@
         <% }) %>
 
         <!-- 새 메뉴 추가 행 -->
-        <tr id="newMenuRow">
-          <td><input id="newName" placeholder="메뉴명" /></td>
-          <td><input id="newPrice" type="number" placeholder="가격" /></td>
-          <td>
-            <select id="newCategory">
-              <option>칵테일</option>
-              <option>메인메뉴</option>
-              <option>사이드메뉴</option>
-              <option>주류/음료</option>
-            </select>
-          </td>
-          <td>
-            <select id="newStatus">
-              <option>판매 중</option>
-              <option>품절</option>
-            </select>
-          </td>
-          <td><input id="newImage" placeholder="이미지 URL" /></td>
-          <td><button id="addMenuBtn">추가</button></td>
-        </tr>
+        <form class="form-box" action="/admin/menu" method="POST" enctype="multipart/form-data">
+          <tr id="newMenuRow">
+            <td><input name="name" placeholder="메뉴명" /></td>
+            <td><input name="price" type="number" placeholder="가격" /></td>
+            <td>
+              <select name="category">
+                <option>칵테일</option>
+                <option>메인</option>
+                <option>사이드</option>
+                <option>주류/음료</option>
+              </select>
+            </td>
+            <td>
+              <select name="isActive">
+                <option>판매 중</option>
+                <option>품절</option>
+              </select>
+            </td>
+            <td><input type="file" name="img1" accept="image/*" placeholder="이미지 URL" /></td>
+            <td><button id="addMenuBtn">추가</button></td>
+          </tr>
+        </form>
       </tbody>
     </table>
 
