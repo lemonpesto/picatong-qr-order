@@ -1,6 +1,9 @@
 body {
   margin: 0;
 }
+a {
+  text-decoration-line: none;
+}
 .nav {
   background: white;
   display: flex;
@@ -12,6 +15,11 @@ body {
 }
 .logo {
   font-weight: bold;
+  font-size: 16px;
+}
+
+.highlight {
+  color: #ff8c00;
 }
 
 .grey-bg {
@@ -51,7 +59,9 @@ body {
   color: white;
 }
 
-.menu-section {
+.menu-section,
+.payment-container,
+.confirm-container {
   background: white;
   padding: 5px 10px 0;
 }
@@ -62,13 +72,44 @@ body {
 }
 
 .menu-section h3 {
-  font-size: 18px;
+  font-size: 16px;
   margin: 0 5px;
   padding: 10px 0 5px;
 }
 
+.payment-container h3,
+.confirm-container h3 {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 5px;
+  padding: 10px 0 5px;
+}
+
+.confirm-container h3 {
+  font-weight: 500;
+}
+.account {
+  text-align: center;
+  font-size: 14px;
+  color: #222;
+  padding: 10px 0 5px;
+  margin: 0 5px;
+}
+.account-number {
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+}
+
 .list-box {
   padding: 10px 0;
+}
+
+.list-box.cart-items {
+  padding: 20px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .menu-divider {
@@ -77,18 +118,18 @@ body {
 }
 
 .list-box h4 {
-  font-size: 16px;
+  font-size: 15px;
   margin: 5px;
 }
-.list-box p {
-  font-size: 13px;
-}
+
 .price {
+  font-size: 14px;
   margin: 0 5px;
 }
 .description {
-  margin: 5px;
-  color: grey;
+  font-size: 14px;
+  margin: 10px 5px;
+  color: #737373;
 }
 
 .overlay {
@@ -99,33 +140,6 @@ body {
   height: 100%;
   background: rgba(0, 0, 0, 0.4); /* 반투명 어두운 배경 */
   z-index: 9; /* 바텀 시트보다 낮게 */
-}
-
-.view-cart-bar {
-  position: sticky;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-
-  background: transparent;
-  display: flex;
-  justify-content: center;
-  overflow-x: auto;
-  padding: 10px;
-
-  z-index: 100;
-}
-
-.view-cart-button {
-  text-align: center;
-  width: 100%;
-  padding: 10px;
-  font-size: 16px;
-  background-color: #f6a829;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
 }
 
 /* 바텀 시트 전체 */
@@ -162,7 +176,7 @@ body {
 }
 .sheet-header h4 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
 }
 .sheet-header button {
   background: none;
@@ -172,7 +186,7 @@ body {
   cursor: pointer;
 }
 .sheet-subheader {
-  font-size: 16px;
+  font-size: 14px;
   margin: 0 0 40px;
 }
 
@@ -184,21 +198,43 @@ body {
   margin-bottom: 40px;
 }
 .qty-label {
-  font-size: 16px;
+  font-size: 14px;
 }
+
+.menu-info {
+  flex-grow: 1;
+}
+
 .qty-control {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 5px;
+  height: 18px;
+  min-width: 64px; /* 수량에 따라 좌우 흔들리지 않게 */
+  justify-content: center;
 }
-.qty-control button {
-  padding: 5px 10px;
-  font-size: 16px;
+.qty-btn {
+  font-family: 'Arial', sans-serif; /* 기본적으로 얇은 기호 */
+  background: none;
+  border: none;
+  font-size: 20px;
+  width: 20px; /* 버튼 너비 고정 */
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
 }
-.qty-control span {
-  font-size: 16px;
-  min-width: 20px;
+
+.qty {
+  width: 20px;
   text-align: center;
+  font-weight: 500;
+  font-size: 14px;
 }
 
 /* 장바구니 버튼 */
@@ -206,44 +242,73 @@ body {
   width: 100%;
   padding: 10px;
   font-size: 16px;
-  background-color: #f6a829;
+  background-color: #ff9900;
   color: white;
   border: none;
-  border-radius: 10px;
+  border-radius: 5px;
   cursor: pointer;
 }
 
-input,
-div {
-  box-sizing: border-box;
-}
-.form-box {
-  background: white;
-  padding: 25px;
-  margin: 20px;
-  border-radius: 8px;
-}
-.form-box input {
-  padding: 10px;
-  font-size: 16px;
-  width: 100%;
-  border: 1px solid black;
-  border-radius: 5px;
-  margin-bottom: 10px;
-}
-.form-box button {
-  padding: 10px;
-  border: none;
-  background: lightgrey;
-  border-radius: 5px;
+.toast-msg {
+  position: fixed;
+  bottom: 65px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(50, 50, 50, 0.9);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease-in-out;
+  z-index: 9999;
 }
 
-#menuTable input,
-#menuTable select {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 4px;
+.toast-msg.show {
+  opacity: 1;
 }
-#menuTable button {
-  padding: 4px 10px;
+
+.bottom-bar {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  z-index: 999;
+  box-sizing: border-box;
+}
+
+.bottom-button {
+  width: 100%;
+  /* max-width: 480px; */
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  background-color: #ff9900;
+  color: white;
+  text-align: center;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.payment-form {
+  width: 100%;
+  /* max-width: 480px; */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.payment-info {
+  font-size: 13px;
+  color: #737373;
+  text-align: center;
+  line-height: 1.4;
+  margin: 0;
 }

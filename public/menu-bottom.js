@@ -71,10 +71,10 @@ document.getElementById('add-to-cart').addEventListener('click', async () => {
     await updateCartButton();
 
     const msg = await res.text();
-    alert(msg); // 예: "메뉴를 추가했습니다."
+    showToast(msg); // 예: "메뉴를 추가했습니다."
   } catch (err) {
     console.error('장바구니 담기 실패:', err);
-    alert('문제가 발생했어요 😢');
+    showToast('문제가 발생했어요 😢');
   }
 
   // 바텀 시트 닫기

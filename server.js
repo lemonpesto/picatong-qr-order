@@ -220,9 +220,34 @@ app.delete('/cart/delete', async (요청, 응답) => {
 });
 
 // 결제 페이지
-app.get('/payment', async (요청, 응답) => {});
+app.get('/payment', async (요청, 응답) => {
+  try {
+    const tableId = 요청.user._id; // 현재 사용자의 tableId
+
+    // 장바구니의 총합 계산
+    const cartItems = await db
+      .collection('cart')
+      .find({ tableId: new ObjectId(tableId) })
+      .toArray();
+
+    const total = cartItems.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+    응답.render('payment.ejs', { total });
+  } catch (err) {
+    console.error('💥 결제 페이지 오류:', err);
+    응답.status(500).send('결제 페이지를 불러오지 못했습니다.');
+  }
+});
 
 // 결제 확인 페이지
+app.get('/payment/confirm', async (요청, 응답) => {
+  try {
+    응답.render('confirm.ejs');
+  } catch (err) {
+    console.error('💥 결제 확인 페이지 오류:', err);
+    응답.status(500).send('결제 확인 페이지를 불러오지 못했습니다.');
+  }
+});
 
 // 주문 내역 페이지
 app.get('/orders/history', async (요청, 응답) => {

@@ -37,8 +37,8 @@
     <% }}) %>
 
     <!-- 장바구니 보기 버튼 -->
-    <div class="view-cart-bar">
-      <a href="/cart" id="view-cart" class="view-cart-button hidden">장바구니 보기</a>
+    <div class="bottom-bar">
+      <a href="/cart" id="view-cart" class="bottom-button hidden">장바구니 보기</a>
     </div>
 
     <!-- 바텀 시트 -->
@@ -55,17 +55,43 @@
         <div class="sheet-qty-row">
           <span class="qty-label">수량</span>
           <div class="qty-control">
-            <button id="minus">-</button>
-            <span id="qty">1</span>
-            <button id="plus">+</button>
+            <button id="minus" class="qty-btn"><i class="fa-solid fa-minus fa-2xs"></i></button>
+            <span id="qty" class="qty">1</span>
+            <button id="plus" class="qty-btn"><i class="fa-solid fa-plus fa-2xs"></i></button>
           </div>
         </div>
         <!-- 장바구니 담기 버튼 -->
         <button id="add-to-cart" class="cart-button">장바구니에 담기</button>
       </div>
     </div>
+    <div id="toast" class="toast-msg"></div>
     <div id="overlay" class="overlay hidden"></div>
 
+    <script>
+      // smartSticky.js
+      window.addEventListener('DOMContentLoaded', () => {
+        const bar = document.querySelector('.bottom-bar');
+        if (!bar) return;
+
+        const isScrollable = document.body.scrollHeight > window.innerHeight;
+        if (!isScrollable) {
+          bar.style.position = 'fixed';
+        } else {
+          bar.style.position = 'sticky';
+        }
+      });
+      function showToast(message) {
+        const toast = document.getElementById('toast');
+        if (!toast) return;
+
+        toast.textContent = message;
+        toast.classList.add('show');
+
+        setTimeout(() => {
+          toast.classList.remove('show');
+        }, 2000);
+      }
+    </script>
     <script src="/menu.js"></script>
     <script src="/menu-category.js"></script>
     <script src="/menu-bottom.js"></script>

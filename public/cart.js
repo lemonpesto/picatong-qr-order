@@ -1,3 +1,15 @@
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+
+  toast.textContent = message;
+  toast.classList.add('show');
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 2000);
+}
+
 async function updateInfo() {
   try {
     const res = await fetch('/cart/summary');
@@ -5,12 +17,12 @@ async function updateInfo() {
 
     // 안내 문구
     const totalQtySpan = document.querySelector('.total-qty');
-    totalQtySpan.textContent = `선택한 ${data.count}개 메뉴를 확인해주세요!`;
+    totalQtySpan.innerHTML = `선택한 메뉴 <span class="highlight">${data.count}</span>개`;
 
     // 주문 버튼
     const orderBtn = document.getElementById('order');
     if (data.count > 0) {
-      orderBtn.textContent = `총 ${data.total.toLocaleString()}원 주문하기 (${data.count})`;
+      orderBtn.innerHTML = `총 <span class="highlight-orange">${data.total.toLocaleString()}원</span> 주문하기 (${data.count})`;
       orderBtn.classList.remove('hidden');
     } else {
       orderBtn.classList.add('hidden');
@@ -30,7 +42,7 @@ console.log('✅ cart.js 로딩됨');
 document.querySelectorAll('.list-box').forEach((item) => {
   const minusBtn = item.querySelector('.minus');
   const plusBtn = item.querySelector('.plus');
-  const trashIcon = minusBtn.querySelector('.fa-trash');
+  const trashIcon = minusBtn.querySelector('.fa-trash-can');
   const minusText = minusBtn.querySelector('.minus-text');
   const qtyEl = item.querySelector('.qty');
   const menuId = item.dataset.menuid;
@@ -55,7 +67,7 @@ document.querySelectorAll('.list-box').forEach((item) => {
       const res = await fetch('/cart/delete?menuid=' + menuId, { method: 'DELETE', credentials: 'include' });
       const msg = await res.text(); // ✅ 여기서만 text() 사용
       item.style.display = 'none';
-      alert(msg);
+      showToast(msg);
       updateInfo();
     } else {
       qty--;
@@ -68,7 +80,7 @@ document.querySelectorAll('.list-box').forEach((item) => {
         body: JSON.stringify({ qty }),
       });
       const msg = await res.text();
-      alert(msg); // 예: "메뉴의 수량을 변경했습니다"
+      showToast(msg); // 예: "메뉴의 수량을 변경했습니다"
       updateInfo();
     }
   });
@@ -83,7 +95,7 @@ document.querySelectorAll('.list-box').forEach((item) => {
       body: JSON.stringify({ qty }),
     });
     const msg = await res.text();
-    alert(msg); // 예: "메뉴의 수량을 변경했습니다"
+    showToast(msg); // 예: "메뉴의 수량을 변경했습니다"
     updateInfo();
   });
 

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>결제</title>
+    <link rel="stylesheet" href="/main.css" />
+    <script src="https://kit.fontawesome.com/a3ff865f92.js" crossorigin="anonymous"></script>
+  </head>
+  <body>
+    <%- include("nav.ejs") %>
+    <div class="confirm-container">
+      <i class="fa-solid fa-hourglass-half" style="color: #ff9900"></i>
+      <h3>운영진이 송금 내역을 확인하러 오는 중이니<br />잠시만 기다려주세요!</h3>
+
+      <div class="bottom-bar" style="display: none">
+          <button type="submit" class="bottom-button">다음</button>
+        </form>
+      </div>
+    </div>
+    <script>
+      // smartSticky.js
+      window.addEventListener('DOMContentLoaded', () => {
+        const bar = document.querySelector('.bottom-bar');
+        if (!bar) return;
+
+        const isScrollable = document.body.scrollHeight > window.innerHeight;
+        if (!isScrollable) {
+          bar.style.position = 'fixed';
+        } else {
+          bar.style.position = 'sticky';
+        }
+      });
+      const account = document.getElementById('account-number');
+      const toast = document.getElementById('toast');
+
+      account.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText('3333257857250');
+          toast.classList.add('show');
+          setTimeout(() => {
+            toast.classList.remove('show');
+          }, 2000);
+        } catch (err) {
+          showToast('복사에 실패했습니다: ' + err);
+        }
+      });
+    </script>
+  </body>
+</html>

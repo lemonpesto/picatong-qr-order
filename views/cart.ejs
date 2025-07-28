@@ -10,24 +10,23 @@
   <body>
     <%- include("nav.ejs") %>
 
-    <!-- 안내 문구 -->
-    <span class="total-qty">안내 문구</span>
-
     <!-- 메뉴 리스트 -->
     <div class="menu-section">
+      <!-- 안내 문구 -->
+      <h3 class="total-qty notice">선택한 메뉴 n개</h3>
       <% menus.forEach((menu, i) => { %>
-      <div class="list-box" data-name="<%= menu.name %>" data-price="<%= menu.price %>" data-menuid="<%= menu.menuId %>">
+      <div class="cart-items list-box" data-name="<%= menu.name %>" data-price="<%= menu.price %>" data-menuid="<%= menu.menuId %>">
         <div class="menu-info">
           <h4><%= menu.menuName %></h4>
           <p class="price"><%= menu.price.toLocaleString() %>원</p>
         </div>
-        <div class="qty-control">
+        <div class="cart-item qty-control">
           <button class="qty-btn minus">
-            <i class="fas fa-trash"></i>
-            <span class="minus-text" style="display: none">-</span>
+            <i class="fa-regular fa-trash-can fa-2xs"></i>
+            <span class="minus-text" style="display: none"><i class="fa-solid fa-minus fa-2xs"></i></span>
           </button>
           <span class="qty"><%= menu.qty %></span>
-          <button class="qty-btn plus">+</button>
+          <button class="qty-btn plus"><i class="fa-solid fa-plus fa-2xs"></i></button>
         </div>
       </div>
       <% if (i !== menus.length - 1) { %>
@@ -35,12 +34,27 @@
       <% } %> <% }) %>
     </div>
     <div class="section-divider"></div>
+    <div id="toast" class="toast-msg"></div>
 
     <!-- 주문하기 버튼 -->
-    <div class="order-bar">
-      <button id="order" class="order-button">주문하기</button>
+    <div class="bottom-bar">
+      <a href="/payment" id="order" class="bottom-button">주문하기</a>
     </div>
 
     <script src="/cart.js"></script>
+    <script>
+      // smartSticky.js
+      window.addEventListener('DOMContentLoaded', () => {
+        const bar = document.querySelector('.bottom-bar');
+        if (!bar) return;
+
+        const isScrollable = document.body.scrollHeight > window.innerHeight;
+        if (!isScrollable) {
+          bar.style.position = 'fixed';
+        } else {
+          bar.style.position = 'sticky';
+        }
+      });
+    </script>
   </body>
 </html>
