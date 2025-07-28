@@ -4,6 +4,7 @@ const { MongoClient, ObjectId } = require('mongodb');
 require('dotenv').config();
 
 app.use(express.static(__dirname + '/public'));
+
 app.set('view engine', 'ejs');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -126,41 +127,27 @@ app.get('/menu', async (요청, 응답) => {
   }
 });
 
+// 메뉴 페이지
 app.post('/cart/add', async (요청, 응답) => {
-  console.log(요청.user);
   const tableId = 요청.user._id; // 세션에서 tableId 추출
   const menuId = 요청.query.menuid;
   const { name, price, qty } = 요청.body;
 
-  await db.collection('cart').insertOne({
-    tableId: new ObjectId(tableId),
-    menuId,
-    menuName: name,
-    price,
-    qty: parseInt(qty),
-  });
-  응답.send('메뉴를 추가했습니다.');
-});
-
-app.post('/cart/update', async (요청, 응답) => {
-  await db.collection('cart').updateOne({ menuId: 요청.query.menuid }, { $set: { qty: parseInt(요청.body.qty) } });
-  응답.send('메뉴의 수량을 변경했습니다.');
-});
-
-app.delete('/cart/delete', async (요청, 응답) => {
-  await db.collection('cart').deleteOne({ menuId: 요청.query.menuid });
-  응답.send('메뉴를 삭제했습니다.');
-});
-
-app.get('/cart', async (요청, 응답) => {
-  try {
-    let result = await db.collection('menus').find().toArray();
-    console.log('menus:', result);
-    응답.render('menu.ejs', { menus: result });
-  } catch (e) {
-    console.error(e);
-    응답.status(500).send('서버 오류');
+  let result = await db.collection('cart').findOne({ tableId: tableId, menuId: new ObjectId(menuId) });
+  if (result) {
+    // 이미 담은 메뉴라면
+    let totalQty = result['qty'] + parseInt(qty);
+    await db.collection('cart').updateOne({ tableId: tableId, menuId: new ObjectId(menuId) }, { $set: { qty: totalQty } });
+  } else {
+    await db.collection('cart').insertOne({
+      tableId: new ObjectId(tableId),
+      menuId: new ObjectId(menuId),
+      menuName: name,
+      price: parseInt(price),
+      qty: parseInt(qty),
+    });
   }
+  응답.send('메뉴를 추가했습니다.');
 });
 
 app.get('/cart/summary', async (요청, 응답) => {
@@ -177,6 +164,67 @@ app.get('/cart/summary', async (요청, 응답) => {
   응답.json({ total, count });
 });
 
+// 장바구니 보기 페이지
+app.get('/cart', async (요청, 응답) => {
+  const tableId = 요청.user._id;
+  try {
+    let result = await db
+      .collection('cart')
+      .find({ tableId: new ObjectId(tableId) })
+      .toArray();
+    응답.render('cart.ejs', { menus: result });
+  } catch (e) {
+    console.error(e);
+    응답.status(500).send('서버 오류');
+  }
+});
+
+app.post('/cart/update', async (요청, 응답) => {
+  const menuId = 요청.query.menuid;
+  const qty = parseInt(요청.body.qty);
+  const tableId = 요청.user._id;
+
+  console.log('🔥 /cart/update 요청 도달'); // 반드시 출력돼야 함
+  console.log('menuId:', menuId);
+  console.log('tableId:', tableId, 'typeof:', typeof tableId);
+  console.log('qty:', qty);
+
+  let tmp = await db.collection('cart').findOne({ tableId: tableId });
+  console.log('[Menu ID] actual: ', menuId, 'expected: ', tmp.menuId);
+
+  const result = await db.collection('cart').updateOne({ tableId: tableId, menuId: new ObjectId(menuId) }, { $set: { qty: qty } });
+
+  if (result.modifiedCount === 0) {
+    응답.status(404).send('해당 항목을 찾을 수 없습니다.');
+  } else {
+    응답.send('메뉴의 수량을 변경했습니다.');
+  }
+});
+
+app.delete('/cart/delete', async (요청, 응답) => {
+  const menuId = 요청.query.menuid;
+  const tableId = 요청.user._id;
+
+  console.log('[DELETE] menuId:', menuId);
+
+  const result = await db.collection('cart').deleteOne({
+    tableId: new ObjectId(tableId),
+    menuId: new ObjectId(menuId),
+  });
+
+  if (result.deletedCount === 0) {
+    응답.status(404).send('삭제할 항목이 없습니다.');
+  } else {
+    응답.send('메뉴를 삭제했습니다.');
+  }
+});
+
+// 결제 페이지
+app.get('/payment', async (요청, 응답) => {});
+
+// 결제 확인 페이지
+
+// 주문 내역 페이지
 app.get('/orders/history', async (요청, 응답) => {
   const tableId = 요청.user._id;
   try {

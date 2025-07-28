@@ -55,7 +55,7 @@ document.getElementById('add-to-cart').addEventListener('click', async () => {
   const name = document.getElementById('sheet-name').textContent;
   const qty = document.getElementById('qty').textContent;
   try {
-    const res = await fetch(`/cart/add?menuid=${currMenuId}`, {
+    const res = await fetch('/cart/add?menuid=' + currMenuId, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -64,6 +64,10 @@ document.getElementById('add-to-cart').addEventListener('click', async () => {
         qty,
       }),
     });
+    if (!res.ok) {
+      const msg = await res.text();
+      throw new Error('서버 오류: ' + msg);
+    }
     await updateCartButton();
 
     const msg = await res.text();
