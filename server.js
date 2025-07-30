@@ -14,6 +14,19 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local');
 const MongoStore = require('connect-mongo');
 
+const { createServer } = require('http');
+const { Server } = require('socket.io');
+const server = createServer(app);
+const io = new Server(server);
+
+io.on('connection', (socket) => {
+  console.log('새로운 소켓 연결:', socket.id);
+  socket.on('joinOrderRoom', (orderId) => {
+    socket.join(orderId);
+    console.log(`소켓 ${socket.id} → 주문방 ${orderId} 입장`);
+  });
+});
+
 app.use(passport.initialize());
 app.use(
   session({
@@ -57,7 +70,7 @@ connectDB
   .then((client) => {
     console.log('DB연결성공');
     db = client.db('picatong-qr-order');
-    app.listen(process.env.PORT, () => {
+    server.listen(process.env.PORT, () => {
       console.log('listening on ' + process.env.PORT);
     });
   })
@@ -247,6 +260,7 @@ app.post('/payment/confirm', async (요청, 응답) => {
     if (cartItems.length === 0) {
       return 응답.status(400).send('장바구니가 비어 있습니다.');
     }
+
     // 총 금액 계산
     const total = cartItems.reduce((sum, item) => sum + item.price * item.qty, 0);
     // 주문 데이터 구성
@@ -258,6 +272,7 @@ app.post('/payment/confirm', async (요청, 응답) => {
         menuName: item.menuName,
         price: item.price,
         qty: item.qty,
+        cooked: false,
       })),
       total,
 
@@ -275,11 +290,12 @@ app.post('/payment/confirm', async (요청, 응답) => {
 
     // 주문 저장
     const result = await db.collection('orders').insertOne(orderDoc);
+    const orderId = result.insertedId.toString();
 
     // 장바구니 비우기
     await db.collection('cart').deleteMany({ tableId: 요청.user._id });
 
-    응답.redirect(`/payment/confirm?orderId=${result._id}`);
+    응답.redirect(`/payment/confirm?orderId=${orderId}`);
   } catch (err) {
     console.error('❌ 주문 저장 실패:', err);
     응답.status(500).send('서버 오류로 주문을 저장하지 못했습니다.');
@@ -308,4 +324,5 @@ app.get('/orders/history', async (요청, 응답) => {
   }
 });
 // ------ 관리자 페이지 ------ //
-app.use('/admin', require('./routes/admin.js'));
+const adminRouter = require('./routes/admin')(io);
+app.use('/admin', adminRouter);

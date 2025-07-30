@@ -6,5 +6,67 @@
     <title>피카통 호프 관리</title>
     <link rel="stylesheet" href="/main.css" />
   </head>
-  <body></body>
+  <body>
+    <!-- /views/admin/kitchen.ejs -->
+
+    <%- include('./partial/sidebar') %>
+
+    <div class="kitchen-page">
+      <h1>주방 페이지</h1>
+
+      <% kitchenOrders.forEach(order => { %>
+      <div class="order-card" data-order-id="<%= order._id %>">
+        <h2><%= order._id %>｜테이블<%= order.tableNum %></h2>
+        <p><%= new Date(order.requestedAt).toLocaleString() %></p>
+        <ul>
+          <% order.items.forEach(item => { %>
+          <li data-menu-id="<%= item.menuId %>">
+            <label> <input type="checkbox" class="cook-checkbox" <%= item.cooked ? 'checked' : '' %> /> <%= item.menuName %> x<%= item.qty %> </label>
+          </li>
+          <% }) %>
+        </ul>
+        <button class="complete-order-btn">요리완료</button>
+      </div>
+      <% }) %>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+      // 각 주문 방에 join
+      document.querySelectorAll('.order-card').forEach((card) => {
+        socket.emit('joinOrderRoom', card.dataset.orderId);
+      });
+
+      // 개별 메뉴 체크 → 바로 DB 업데이트, 서버 페이지에도 알림
+      document.querySelectorAll('.cook-checkbox').forEach((chk) => {
+        chk.addEventListener('change', async (e) => {
+          const orderId = e.target.closest('.order-card').dataset.orderId;
+          const menuId = e.target.closest('li').dataset.menuId;
+          // checked 상태에 따라 호출할 API 결정
+          const url = e.target.checked ? '/admin/kitchen/item-cooked' : '/admin/kitchen/item-uncook';
+          await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId, menuId }),
+          });
+        });
+      });
+
+      // “요리완료” 버튼 클릭 → 모든 체크박스 강제 체크 + 전체 완료 API 호출 + 카드 제거
+      document.querySelectorAll('.complete-order-btn').forEach((btn) => {
+        btn.addEventListener('click', async (e) => {
+          const card = e.target.closest('.order-card');
+          const orderId = card.dataset.orderId;
+          card.querySelectorAll('.cook-checkbox').forEach((c) => (c.checked = true));
+
+          await fetch('/admin/kitchen/complete-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId }),
+          });
+          card.remove();
+        });
+      });
+    </script>
+  </body>
 </html>

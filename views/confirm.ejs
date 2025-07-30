@@ -10,17 +10,36 @@
   <body>
     <%- include("nav.ejs") %>
     <div class="confirm-container">
-      <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #ff8c00;"></i>
+      <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #ff8c00"></i>
       <h3>운영진이 송금 내역을 확인하러 오는 중이니<br />잠시만 기다려주세요!</h3>
-      <span class="confirm-subtext">
-        운영진이 도착하지 않으면 직접 말씀해주세요
-      </span>
+      <span class="confirm-subtext"> 운영진이 도착하지 않으면 직접 말씀해주세요 </span>
 
       <div class="bottom-bar" style="display: none">
-          <button type="submit" class="bottom-button">다음</button>
-        </form>
+        <button type="submit" class="bottom-button">다음</button>
       </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io@4.7.2/client-dist/socket.io.min.js"></script>
+    <script>
+      const socket = io();
+      // 1) URL에서 orderId 파싱
+      const params = new URLSearchParams(window.location.search);
+      const orderId = params.get('orderId');
+
+      if (orderId) {
+        // 2) 해당 주문 ID 방에 참여
+        socket.emit('joinOrderRoom', orderId);
+
+        // 3) 서버가 보낸 확정 이벤트 수신
+        socket.on('orderConfirmed', () => {
+          // 스피너 숨기고 문구 교체
+          document.querySelector('.confirm-container i').style.display = 'none';
+          document.querySelector('.confirm-container h3').textContent = '주문이 접수되었습니다!';
+          // 다음 버튼(바텀바) 보이기
+          const bar = document.querySelector('.bottom-bar');
+          bar.style.display = 'block';
+        });
+      }
+    </script>
     <script>
       // smartSticky.js
       window.addEventListener('DOMContentLoaded', () => {
