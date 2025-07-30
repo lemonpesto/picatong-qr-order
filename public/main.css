@@ -1,3 +1,10 @@
+@font-face {
+  font-family: 'Pretendard-Regular';
+  src: url('https://fastly.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+}
+
 body {
   margin: 0;
 }
@@ -9,12 +16,12 @@ a {
   display: flex;
   padding: 15px;
   align-items: center;
+  font-weight: 600;
 }
 .nav a {
   margin-right: 10px;
 }
 .logo {
-  font-weight: bold;
   font-size: 16px;
 }
 
@@ -60,10 +67,20 @@ a {
 }
 
 .menu-section,
+.cart-section,
 .payment-container,
 .confirm-container {
   background: white;
   padding: 5px 10px 0;
+}
+
+.payment-container,
+.confirm-container {
+  margin-top: 10vh;
+  display: flex;
+  flex-direction: column; /* 위아래 배치 */
+  align-items: center; /* 가로 중앙 정렬 */
+  text-align: center; /* 텍스트 가운데 정렬 */
 }
 
 .section-divider {
@@ -71,23 +88,38 @@ a {
   background: #eee;
 }
 
-.menu-section h3 {
+.menu-section h3,
+.cart-section h3,
+.payment-container h3,
+.confirm-container h3 {
+  font-weight: 700;
   font-size: 16px;
   margin: 0 5px;
   padding: 10px 0 5px;
+}
+
+.cart-section h3 {
+  font-weight: 600;
 }
 
 .payment-container h3,
 .confirm-container h3 {
-  text-align: center;
-  font-size: 16px;
   font-weight: 600;
-  margin: 0 5px;
-  padding: 10px 0 5px;
+  text-align: center;
+  padding: 10px 0;
+  line-height: 1.5;
 }
 
 .confirm-container h3 {
   font-weight: 500;
+  margin-top: 10px; /* 아이콘과 간격 조절 */
+}
+.confirm-subtext {
+  font-size: 13px;
+  color: #888;
+  margin-top: 4px;
+  display: block;
+  line-height: 1.4;
 }
 .account {
   text-align: center;
@@ -118,8 +150,9 @@ a {
 }
 
 .list-box h4 {
-  font-size: 15px;
-  margin: 5px;
+  font-size: 14px;
+  margin: 2px 5px;
+  font-weight: 600;
 }
 
 .price {
@@ -127,7 +160,7 @@ a {
   margin: 0 5px;
 }
 .description {
-  font-size: 14px;
+  font-size: 13px;
   margin: 10px 5px;
   color: #737373;
 }

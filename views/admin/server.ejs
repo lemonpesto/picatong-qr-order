@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>피카통 호프 관리</title>
+    <link rel="stylesheet" href="/admin.css" />
+  </head>
+  <body>
+    <!-- /views/admin/server.ejs -->
+
+    <%- include('./partial/sidebar') %>
+
+    <div class="server-page">
+      <h1>서버 페이지</h1>
+
+      <div class="server-tabs">
+        <button id="tab-paid" class="active">송금 확인</button>
+        <button id="tab-serve">서빙</button>
+      </div>
+
+      <!-- 테이블 필터 -->
+      <div class="table-filter">
+        <button class="filter-btn active" data-table="all">전체</button>
+        <% for(let i=1; i<=tableNum; i++){ %>
+        <button class="filter-btn" data-table="<%= i %>">T<%= i %></button>
+        <% }%>
+      </div>
+
+      <!-- 송금 확인 목록 -->
+      <div id="paid-list" class="order-list">
+        <% unpaidOrders.forEach(order => { %>
+        <div class="order-card" data-table="<%= order.tableNum %>">
+          <div class="order-header">
+            <span>T<%= order.tableNum %></span>
+            <span><%= order.requestedAt.toLocaleString() %></span>
+            <form action="/admin/server/delete/<%= order._id %>" method="POST" onsubmit="return confirm('주문을 취소하시겠습니까?');">
+              <button type="submit" class="btn-delete">삭제</button>
+            </form>
+          </div>
+          <div class="order-items">
+            <p class="items-list collapsed"><%= order.items.map(i => `${i.menuName} x${i.qty}`).join(', ') %></p>
+            <% if (order.items.length > 2) { %>
+            <button class="btn-toggle-items">... 더 보기</button>
+            <% } %>
+          </div>
+          <div class="order-footer">
+            <span class="order-total"><%= order.total.toLocaleString() %>원</span>
+            <form action="/admin/server/confirm/<%= order._id %>" method="POST">
+              <button type="submit" class="btn-confirm-payment">송금 확인</button>
+            </form>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+
+      <!-- 서빙 목록 -->
+      <div id="serve-list" class="order-list hidden">
+        <% servingOrders.forEach(order => { %>
+        <div class="order-card" data-table="<%= order.tableNum %>">
+          <div class="order-header">
+            <span>T<%= order.tableNum %></span>
+            <span><%= order.confirmedAt.toLocaleString() %></span>
+          </div>
+          <div class="order-items">
+            <% order.items.forEach((item, idx) => { %>
+            <label>
+              <input type="checkbox" class="item-checkbox" id="chk-<%= order._id %>-<%= idx %>" />
+              <span><%= item.name %> x<%= item.qty %></span>
+            </label>
+            <% }) %>
+          </div>
+          <div class="order-footer">
+            <button class="btn-serve-order" disabled>서빙 완료</button>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+    <script>
+      // 탭 전환
+      const paidTab = document.getElementById('tab-paid');
+      const serveTab = document.getElementById('tab-serve');
+      paidTab.addEventListener('click', () => {
+        paidTab.classList.add('active');
+        serveTab.classList.remove('active');
+        document.getElementById('paid-list').classList.remove('hidden');
+        document.getElementById('serve-list').classList.add('hidden');
+      });
+      serveTab.addEventListener('click', () => {
+        serveTab.classList.add('active');
+        paidTab.classList.remove('active');
+        document.getElementById('serve-list').classList.remove('hidden');
+        document.getElementById('paid-list').classList.add('hidden');
+      });
+
+      // 테이블 필터 태그 (복수 선택 가능)
+      const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
+      const allBtn = filterButtons.find((b) => b.dataset.table === 'all');
+      const tableBtns = filterButtons.filter((b) => b.dataset.table !== 'all');
+      const allTableNums = tableBtns.map((b) => b.dataset.table);
+      let selectedTables = new Set();
+
+      // 초기: 전체만 active
+      filterButtons.forEach((b) => b.classList.remove('active'));
+      allBtn.classList.add('active');
+
+      filterButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const table = btn.dataset.table;
+          if (table === 'all') {
+            filterButtons.forEach((b) => b.classList.remove('active'));
+            selectedTables.clear();
+            allBtn.classList.add('active');
+            document.querySelectorAll('.order-card').forEach((card) => {
+              card.style.display = ''; // 모두 보이도록 혹은 원하는 대로 조정
+            });
+          } else {
+            if (allBtn.classList.contains('active')) {
+              allBtn.classList.remove('active');
+            }
+            if (selectedTables.has(table)) {
+              selectedTables.delete(table);
+              btn.classList.remove('active');
+            } else {
+              selectedTables.add(table);
+              btn.classList.add('active');
+            }
+            document.querySelectorAll('.order-card').forEach((card) => {
+              card.style.display = selectedTables.has(card.dataset.table) ? '' : 'none';
+            });
+          }
+        });
+      });
+      // "더 보기" 토글
+      document.querySelectorAll('.btn-toggle-items').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const p = btn.previousElementSibling;
+          p.classList.toggle('collapsed');
+          btn.textContent = p.classList.contains('collapsed') ? '더 보기' : '접기';
+        });
+      });
+
+      // 송금 확인
+      document.querySelectorAll('.btn-confirm-payment').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const card = btn.closest('.order-card');
+          const id = card.dataset.id;
+          try {
+            const res = await fetch(`/admin/server/confirm?id=${id}`, { method: 'POST' });
+            const msg = await res.text();
+            alert(msg);
+            card.remove();
+          } catch (err) {
+            console.error(err);
+            alert('송금 확인 중 오류가 발생했습니다.');
+          }
+        });
+      });
+
+      // 주문 취소
+      document.querySelectorAll('.btn-delete').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('주문을 취소하시겠습니까?')) return;
+          const card = btn.closest('.order-card');
+          const id = card.dataset.id;
+          try {
+            const res = await fetch(`/admin/server/delete?id=${id}`, { method: 'POST' });
+            const msg = await res.text();
+            alert(msg);
+            card.remove();
+          } catch (err) {
+            console.error(err);
+            alert('주문 취소 중 오류가 발생했습니다.');
+          }
+        });
+      });
+
+      // 서빙 완료
+      document.querySelectorAll('.btn-serve-order').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const card = btn.closest('.order-card');
+          const id = card.dataset.id;
+          try {
+            const res = await fetch(`/admin/server/serve?id=${id}`, { method: 'POST' });
+            const msg = await res.text();
+            alert(msg);
+            card.remove();
+          } catch (err) {
+            console.error(err);
+            alert('서빙 완료 중 오류가 발생했습니다.');
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

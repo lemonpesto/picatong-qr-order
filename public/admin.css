@@ -1,0 +1,56 @@
+.table-filter {
+  margin: 12px 0;
+}
+.filter-btn {
+  background-color: #1f556f;
+  color: white;
+  border: 1px solid #123;
+  padding: 6px 12px;
+  margin-right: 6px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.filter-btn.active {
+  background-color: #123;
+}
+
+.order-card {
+  background-color: #1f556f;
+  color: white;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+.order-items label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.item-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #ff9900;
+}
+.btn-serve-order {
+  background-color: #28a745;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: white;
+}
+.btn-serve-order:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.hidden {
+  display: none;
+}

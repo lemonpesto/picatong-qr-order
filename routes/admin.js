@@ -39,4 +39,36 @@ router.post('/menu', (요청, 응답) => {
   });
 });
 
+router.get('/kitchen', async (응답, 요청) => {
+  const toCookOrders = await db.collection('orders').find({ paid: true, completed: false }).toArray();
+  응답.render('admin/kitchen', { toCookOrders });
+});
+
+// /admin/server
+router.get('/server', async (요청, 응답) => {
+  const unpaidOrders = await db.collection('orders').find({ paid: false }).sort({ requestedAt: 1 }).toArray();
+  const servingOrders = await db.collection('orders').find({ paid: true, completed: true, served: false }).sort({ completedAt: 1 }).toArray();
+  const tableNum = await db.collection('tables').countDocuments();
+
+  응답.render('admin/server', { unpaidOrders, servingOrders, tableNum });
+});
+
+// 송금 확인 처리
+router.post('/server/confirm', async (요청, 응답) => {
+  await db.collection('orders').updateOne({ _id: 요청.query.id }, { $set: { paid: true, paidAt: new Date() } });
+  응답.send('송금확인이 완료되었습니다.');
+});
+
+// 주문 취소 처리
+router.post('/server/delete', async (요청, 응답) => {
+  await db.collection('orders').deleteOne({ _id: 요청.query.id });
+  응답.send('주문이 삭제되었습니다.');
+});
+
+// 서빙 완료 처리
+router.post('/server/serve', async (요청, 응답) => {
+  await db.collection('orders').update({ _id: 요청.query.id }, { $set: { served: true, servedAt: new Date() } });
+  응답.send('서빙이 완료되었습니다.');
+});
+
 module.exports = router;

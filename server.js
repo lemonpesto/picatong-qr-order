@@ -240,12 +240,59 @@ app.get('/payment', async (요청, 응답) => {
 });
 
 // 결제 확인 페이지
+app.post('/payment/confirm', async (요청, 응답) => {
+  try {
+    // 유저 장바구니에서 항목 가져오기
+    const cartItems = await db.collection('cart').find({ tableId: 요청.user._id }).toArray();
+    if (cartItems.length === 0) {
+      return 응답.status(400).send('장바구니가 비어 있습니다.');
+    }
+    // 총 금액 계산
+    const total = cartItems.reduce((sum, item) => sum + item.price * item.qty, 0);
+    // 주문 데이터 구성
+    const orderDoc = {
+      // 기본 주문 정보
+      tableNum: 요청.user.tableNum,
+      items: cartItems.map((item) => ({
+        menuId: item.menuId,
+        menuName: item.menuName,
+        price: item.price,
+        qty: item.qty,
+      })),
+      total,
+
+      // 상태 정보
+      paid: false,
+      completed: false,
+      served: false,
+
+      // 시간 정보
+      requestedAt: new Date(), // 유저가 "송금했습니다" 버튼을 누른 시각
+      confirmedAt: null, // 서버가 송금 확인을 누른 시각
+      completedAt: null, // 주방에서 요리 완료 누른 시각
+      servedAt: null, // 서버가 서빙 완료 누른 시각
+    };
+
+    // 주문 저장
+    const result = await db.collection('orders').insertOne(orderDoc);
+
+    // 장바구니 비우기
+    await db.collection('cart').deleteMany({ tableId: 요청.user._id });
+
+    응답.redirect(`/payment/confirm?orderId=${result._id}`);
+  } catch (err) {
+    console.error('❌ 주문 저장 실패:', err);
+    응답.status(500).send('서버 오류로 주문을 저장하지 못했습니다.');
+  }
+});
+
+// 결제 확인 페이지
 app.get('/payment/confirm', async (요청, 응답) => {
   try {
     응답.render('confirm.ejs');
   } catch (err) {
-    console.error('💥 결제 확인 페이지 오류:', err);
-    응답.status(500).send('결제 확인 페이지를 불러오지 못했습니다.');
+    console.error('💥 /payment/confirm 오류:', err);
+    응답.status(500).send('확인 페이지를 불러오는 중 오류가 발생했습니다.');
   }
 });
 

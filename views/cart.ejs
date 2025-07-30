@@ -11,9 +11,9 @@
     <%- include("nav.ejs") %>
 
     <!-- 메뉴 리스트 -->
-    <div class="menu-section">
+    <div class="cart-section">
       <!-- 안내 문구 -->
-      <h3 class="total-qty notice">선택한 메뉴 n개</h3>
+      <h3 class="total-qty">선택한 메뉴 n개</h3>
       <% menus.forEach((menu, i) => { %>
       <div class="cart-items list-box" data-name="<%= menu.name %>" data-price="<%= menu.price %>" data-menuid="<%= menu.menuId %>">
         <div class="menu-info">

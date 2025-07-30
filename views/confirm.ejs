@@ -10,8 +10,11 @@
   <body>
     <%- include("nav.ejs") %>
     <div class="confirm-container">
-      <i class="fa-solid fa-hourglass-half" style="color: #ff9900"></i>
+      <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #ff8c00;"></i>
       <h3>운영진이 송금 내역을 확인하러 오는 중이니<br />잠시만 기다려주세요!</h3>
+      <span class="confirm-subtext">
+        운영진이 도착하지 않으면 직접 말씀해주세요
+      </span>
 
       <div class="bottom-bar" style="display: none">
           <button type="submit" class="bottom-button">다음</button>
