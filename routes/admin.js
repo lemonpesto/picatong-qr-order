@@ -1,7 +1,7 @@
 // routes/admin.js
 module.exports = (io) => {
   const router = require('express').Router();
-  const { ObjectId } = require('mongodb');
+  const { MongoClient, ObjectId } = require('mongodb');
 
   let connectDB = require('./../database.js');
   let db;
@@ -29,70 +29,118 @@ module.exports = (io) => {
     }
   });
 
+  // 새 메뉴 등록 폼
+  router.get('/menu/new', async (req, res) => {
+    try {
+      const categories = await db.collection('categories').find().sort({ order: 1 }).toArray();
+      res.render('admin/menu-new', { categories, pageTitle: '메뉴관리' });
+    } catch (e) {
+      console.error(e);
+      res.status(500).send('서버 오류');
+    }
+  });
+  // 메뉴 수정 폼
+  router.get('/menu/:id/edit', async (req, res) => {
+    try {
+      const { id } = req.params;
+      if (!ObjectId.isValid(id)) return res.status(400).send('잘못된 메뉴 ID');
+      const menu = await db.collection('menus').findOne({ _id: new ObjectId(id) });
+      const categories = await db.collection('categories').find().sort({ order: 1 }).toArray();
+      if (!menu) return res.status(404).send('메뉴를 찾을 수 없습니다');
+      res.render('admin/menu-edit', { menu, categories, pageTitle: '메뉴관리' });
+    } catch (e) {
+      console.error(e);
+      res.status(500).send('서버 오류');
+    }
+  });
+
+  // 메뉴 등록 처리
   router.post('/menu', async (요청, 응답) => {
     try {
-      const { name, price, category, description, isActive } = 요청.body;
-      if (!name || !price) {
-        return 응답.status(400).send('모든 항목을 입력해야 합니다.');
-      }
-      // 카테고리 문서에서 manufacturing 불러오기
-      const catDoc = await db.collection('categories').findOne({ name: category });
-      const manufacturing = catDoc ? catDoc.manufacturing : '';
+      const { name, price, category, description, status } = 요청.body;
+      const isActive = status === 'true';
 
-      await db.collection('menus').insertOne({
+      // 선택된 카테고리의 제조음식 여부 조회
+      const catDoc = await db.collection('categories').findOne({ name: category });
+
+      const manufacturing = catDoc ? catDoc.manufacturing : false;
+
+      // 새 메뉴 삽입
+      const result = await db.collection('menus').insertOne({
         name,
         price: parseInt(price),
         category,
         description,
-        isActive: isActive === 'true',
+        isActive,
         manufacturing,
       });
-      응답.status(201).send();
-    } catch (e) {
-      console.error(e);
+      // (브로드캐스트용) 바로 사용할 새 메뉴 객체
+      const newMenu = {
+        _id: result.insertedId,
+        name,
+        price: parseInt(price),
+        category,
+        description,
+        isActive,
+        manufacturing
+      };
+
+      // 3) 모든 손님 페이지에 실시간 추가 이벤트 브로드캐스트
+      io.emit('menuAdded', newMenu);
+
+      // 4) 관리자 페이지로 리다이렉트
+      응답.redirect('/admin/menu');
+    } catch (err) {
+      console.error('메뉴 등록 중 오류:', err);
       응답.status(500).send('서버 에러');
     }
   });
 
-  // 메뉴 삭제
-  router.delete('/menu', async (req, res) => {
+  // 메뉴 수정 처리
+  router.post('/menu/:id', async (req, res) => {
     try {
-      const { id } = req.query;
-      if (!ObjectId.isValid(id)) {
-        return res.status(400).send('유효하지 않은 ID');
-      }
-      await db.collection('menus').deleteOne({ _id: new ObjectId(id) });
-      res.send('삭제되었습니다.');
-    } catch (e) {
-      console.error(e);
-      res.status(500).send('서버 에러');
+      const id = new ObjectId(req.params.id);
+      const { name, price, category, description, status } = req.body;
+      const isActive = status === 'true';
+
+      // DB 업데이트
+      const result = await db.collection('menus').findOneAndUpdate(
+        { _id: id },
+        {
+          $set: {
+            name,
+            price: parseInt(price),
+            category,
+            description,
+            isActive,
+          },
+        },
+        { returnDocument: 'after' }
+      );
+      const updatedMenu = result.value;
+      io.emit('menuUpdated', updatedMenu);
+      res.redirect('/admin/menu');
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('메뉴 수정 중 서버 에러');
     }
   });
 
-  // 메뉴 수정
-  router.put('/menu', async (req, res) => {
+  // 메뉴 삭제 처리
+  router.delete('/menu/:id', async (req, res) => {
     try {
-      const { id } = req.query;
-      if (!ObjectId.isValid(id)) {
-        return res.status(400).send('유효하지 않은 ID');
-      }
-      const { name, price, category, status } = req.body;
-      const updateDoc = {
-        name,
-        price: parseInt(price),
-        category,
-        description,
-        status: status === 'true',
-      };
-      // 변경된 카테고리에 맞게 manufacturing 업데이트
-      const catDoc = await db.collection('categories').findOne({ name: category });
-      if (catDoc) updateDoc.manufacturing = catDoc.manufacturing;
+      const { id } = req.params;
+      if (!ObjectId.isValid(id)) return res.status(400).send('유효하지 않은 메뉴 ID');
 
-      await db.collection('menus').updateOne({ _id: new ObjectId(id) }, { $set: updateDoc });
-      res.send('수정되었습니다.');
-    } catch (e) {
-      console.error(e);
-      res.status(500).send('서버 에러');
+      const result = await db.collection('menus').deleteOne({ _id: new ObjectId(id) });
+      if (result.deletedCount === 0) return res.status(404).send('메뉴를 찾을 수 없습니다');
+
+      // 실시간으로 모든 관리자에게 메뉴 삭제 알림
+      io.emit('menuDeleted', id);
+      res.json(result.value)
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('메뉴 삭제 중 서버 에러');
     }
   });
 

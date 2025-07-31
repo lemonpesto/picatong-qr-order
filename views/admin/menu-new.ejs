@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= pageTitle %></title>
+    <link rel="stylesheet" href="/admin.css" />
+    <script src="https://kit.fontawesome.com/a3ff865f92.js" crossorigin="anonymous"></script>
+  </head>
+  <body>
+    <%- include('./partial/sidebar') %>
+    <div class="edit-page">
+      <h3><%= "메뉴 추가" %></h3>
+      <form action="/admin/menu" method="POST">
+        <label>메뉴명</label>
+        <input name="name" value="" placeholder="예: 감자튀김" required />
+
+        <label>가격</label>
+        <input name="price" type="number" value="" placeholder="예: 4000" required />
+
+        <label>카테고리</label>
+        <select name="category">
+          <% categories.forEach(cat => { %>
+          <option value="<%= cat.name %>"><%= cat.name %></option>
+          <% }) %>
+        </select>
+
+        <label>설명</label>
+        <textarea name="description" placeholder="간단한 메뉴 설명"></textarea>
+
+        <label>상태</label>
+        <select name="status">
+          <option value="true" selected>판매중</option>
+          <option value="false">품절</option>
+        </select>
+
+        <button type="submit">등록</button>
+        <a href="/admin/menu" class="cancel-btn">취소</a>
+      </form>
+    </div>
+    <script>
+      
+    </script>
+  </body>
+</html>

@@ -13,7 +13,15 @@ function showToast(message) {
 async function updateInfo() {
   try {
     const res = await fetch('/cart/summary');
-    const data = await res.json(); // { total: 12000, count: 3 }
+    if (!res.ok) {
+      console.error('요약 정보 요청 실패:', res.status);
+      throw new Error('네트워크 응답이 정상이 아닙니다');
+    }
+    const data = await res.json();
+    // 안전하게 기본값 설정
+    const total = (typeof data.total === 'number' ? data.total : 0);
+    const count = (typeof data.count === 'number' ? data.count : 0);
+
 
     // 빈 장바구니 섹션
     const noticeSection = document.querySelector('.notice-bar');

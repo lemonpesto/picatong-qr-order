@@ -25,6 +25,12 @@ io.on('connection', (socket) => {
     socket.join(orderId);
     console.log(`소켓 ${socket.id} → 주문방 ${orderId} 입장`);
   });
+  // ── 메뉴 업데이트(menuUpdated) 로직 ──
+  socket.on('menuUpdated', (updatedMenu) => {
+    // 모든 손님(관리자 본인 제외)에 브로드캐스트
+    socket.broadcast.emit('menuUpdated', updatedMenu);
+    console.log(`메뉴 업데이트 전파:`, updatedMenu);
+  });
 });
 
 app.use(passport.initialize());
@@ -275,6 +281,7 @@ app.post('/payment/confirm', async (요청, 응답) => {
         menuId: item.menuId,
         menuName: item.menuName,
         price: item.price,
+        manufacturing: item.menufacturing,
         qty: item.qty,
         cooked: false,
       })),

@@ -2,6 +2,7 @@
 <html>
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>메뉴 관리</title>
     <link rel="stylesheet" href="/admin.css" />
     <script src="https://kit.fontawesome.com/a3ff865f92.js" crossorigin="anonymous"></script>
@@ -10,180 +11,106 @@
   </head>
   <body>
     <%- include('./partial/sidebar') %>
-    <div class="menu-page">
-      <h1><%= pageTitle %></h1>
-
-      <!-- 메뉴 리스트 및 추가 -->
-      <table id="menuTable">
-        <thead>
-          <tr>
-            <th>메뉴명</th>
-            <th>가격</th>
-            <th>카테고리</th>
-            <th>설명</th>
-            <th>상태</th>
-            <th>액션</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% menus.forEach(menu => { %>
-          <tr data-id="<%= menu._id %>">
-            <td class="cell-name"><%= menu.name %></td>
-            <td class="cell-price"><%= menu.price %></td>
-            <td class="cell-category"><%= menu.category %></td>
-            <td class="cell-desc"><%= menu.description || '-' %></td>
-            <td class="cell-status"><%= menu.isActive ? '판매' : '품절' %></td>
-            <td>
-              <button class="editBtn">수정</button>
-              <button class="deleteBtn">삭제</button>
-            </td>
-          </tr>
-          <% }) %>
-
-          <!-- 새 메뉴 추가 행 -->
-          <tr id="newMenuRow">
-            <td><input id="newName" placeholder="메뉴명" /></td>
-            <td><input id="newPrice" type="number" placeholder="가격" /></td>
-            <td>
-              <select id="newCategory">
-                <% categories.forEach(cat => { %>
-                <option value="<%= cat.name %>"><%= cat.name %></option>
-                <% }) %>
-              </select>
-            </td>
-            <td><input id="newDesc" placeholder="설명" /></td>
-            <td>
-              <select id="newStatus">
-                <option value="true">판매</option>
-                <option value="false">품절</option>
-              </select>
-            </td>
-            <td><button id="addMenuBtn">추가</button></td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- 2. 하단: 카테고리 설정 섹션 -->
-      <section class="category-settings">
-        <h2>카테고리 설정</h2>
-        <ul id="categoryList">
-          <% categories.forEach(cat => { %>
-          <li data-id="<%= cat._id %>" class="draggable">
-            <span class="cat-name"><%= cat.name %></span>
-            <button class="deleteCat">삭제</button>
-          </li>
-          <% }) %>
-        </ul>
-        <div class="add-category">
-          <input id="newCatName" placeholder="새 카테고리명" />
-          <select id="newCatManu">
-            <option value="true">제조음식 O</option>
-            <option value="false">제조음식 X</option>
-          </select>
-
-          <button id="addCategoryBtn">카테고리 추가</button>
-        </div>
-      </section>
+    <!-- 카테고리 탭 -->
+    <div class="category-tabs">
+      <% categories.forEach((cat, idx) => { %>
+      <button class="tab-btn <%= idx===0? 'active': '' %>" data-target="section-<%= cat.name %>"><%= cat.name %></button>
+      <% }) %>
     </div>
+    <div class="menu-page">
+      <!-- 메뉴 카드 그룹 (카테고리별) -->
+      <div class="menu-cards">
+        <% categories.forEach(cat => { %>
+        <section id="section-<%= cat.name %>" class="category-section">
+          <h2 class="category-title"><%= cat.name %></h2>
+          <div class="cards-wrapper">
+            <% menus.filter(m => m.category === cat.name).forEach(menu => { %>
+            <div class="menu-card">
+              <div class="card-header">
+                <h3><%= menu.name %></h3>
+                <a href="/admin/menu/<%= menu._id %>/edit" class="edit-icon">
+                  <i class="fa-solid fa-pen"></i>
+                </a>
+              </div>
+              <p class="price"><%= menu.price.toLocaleString() %>원</p>
+              <p class="description"><%= menu.description || '설명 없음' %></p>
+              <p class="status <%= menu.isActive? 'on':'off' %>"><%= menu.isActive? '판매중':'품절' %></p>
+            </div>
+            <% }) %>
+          </div>
+        </section>
+        <% }) %>
+      </div>
+    </div>
+    <!-- 신규 추가 플로팅 버튼 -->
+    <form action="/admin/menu/new">
+      <button class="fab"><i class="fa-solid fa-plus"></i></button>
+    </form>
 
     <script>
-      // --- 메뉴 추가 / 수정 / 삭제 로직 (생략) ---
-      document.getElementById('addMenuBtn').addEventListener('click', async () => {
-        const name = document.getElementById('newName').value.trim();
-        const price = document.getElementById('newPrice').value;
-        const category = document.getElementById('newCategory').value;
-        const description = document.getElementById('newDesc').value.trim();
-        const status = document.getElementById('newStatus').value;
-        if (!name || !price) {
-          return alert('메뉴명과 가격은 필수입니다.');
-        }
-        const res = await fetch('/admin/menu', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, price, category, description, status }),
+      const categoryBar = document.querySelector('.category-tabs');
+      const buttons = document.querySelectorAll('.tab-btn');
+      const sections = document.querySelectorAll('.category-section');
+
+      let autoScrollInProgress = false;
+      let autoScrollTimeout;
+
+      // 1) 버튼 클릭 → 즉시 active 설정 & 자동 스크롤 플래그 토글
+      buttons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          // (a) 클릭 즉시 active
+          buttons.forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          // (b) 자동 스크롤 시작
+          const targetId = btn.dataset.target;
+          const targetSection = document.getElementById(targetId);
+          if (!targetSection) return;
+
+          const yOffset = -categoryBar.offsetHeight;
+          const y = targetSection.getBoundingClientRect().top + window.pageYOffset + yOffset;
+
+          // 플래그 올리고, 이전 타이머 지운 뒤 스크롤
+          autoScrollInProgress = true;
+          clearTimeout(autoScrollTimeout);
+          window.scrollTo({ top: y, behavior: 'smooth' });
+
+          // 500ms 후 자동 스크롤 끝난 걸로 간주
+          autoScrollTimeout = setTimeout(() => {
+            autoScrollInProgress = false;
+          }, 500);
         });
-        if (res.ok) location.reload();
-        else alert(await res.text());
+
+        // 2) 스크롤 감지 → 자동 스크롤 중이면 무시, 아니면 섹션 기준 active 토글
+        window.addEventListener('scroll', () => {
+          if (autoScrollInProgress) return;
+
+          let currentSectionId = '';
+          const scrollY = window.scrollY;
+
+          sections.forEach((section) => {
+            const sectionTop = section.offsetTop - categoryBar.offsetHeight - 10;
+            const sectionBottom = sectionTop + section.offsetHeight;
+            if (scrollY >= sectionTop && scrollY < sectionBottom) {
+              currentSectionId = section.id;
+            }
+          });
+
+          buttons.forEach((btn) => {
+            btn.dataset.target === currentSectionId ? btn.classList.add('active') : btn.classList.remove('active');
+          });
+        });
       });
 
-      // --- 메뉴 삭제 ---
-      document.querySelectorAll('.deleteBtn').forEach((btn) => {
+      // 메뉴 삭제
+      document.querySelectorAll('.delete-btn').forEach((btn) => {
         btn.addEventListener('click', async () => {
           if (!confirm('메뉴를 삭제하시겠습니까?')) return;
-          const row = btn.closest('tr');
-          const id = row.dataset.id;
-          const res = await fetch(`/admin/menu?id=${id}`, { method: 'DELETE' });
-          if (res.ok) row.remove();
+          const id = btn.dataset.id;
+          const res = await fetch(`/admin/menu/${id}`, { method: 'DELETE' });
+          if (res.ok) btn.closest('.menu-card').remove();
           else alert(await res.text());
         });
-      });
-
-      // --- 메뉴 수정(간단히 prompt 사용) ---
-      document.querySelectorAll('.editBtn').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-          const row = btn.closest('tr');
-          const id = row.dataset.id;
-          const current = {
-            name: row.querySelector('.cell-name').textContent,
-            price: row.querySelector('.cell-price').textContent,
-            category: row.querySelector('.cell-category').textContent,
-            isActive: row.querySelector('.cell-status').textContent === '판매',
-          };
-          const name = prompt('메뉴명', current.name);
-          if (name == null) return;
-          const price = prompt('가격', current.price);
-          if (price == null) return;
-          const category = prompt('카테고리', current.category);
-          if (category == null) return;
-          const status = confirm('판매 가능한 상태인가요?') ? 'true' : 'false';
-
-          const res = await fetch(`/admin/menu?id=${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, price, category, status }),
-          });
-          if (res.ok) location.reload();
-          else alert(await res.text());
-        });
-      });
-
-      // --- 카테고리 추가 ---
-      document.getElementById('addCategoryBtn').addEventListener('click', async () => {
-        const name = document.getElementById('newCatName').value.trim();
-        const manu = document.getElementById('newCatManu').value.trim();
-        if (!name || !manu) return alert('카테고리명과 제조사를 입력하세요.');
-        const res = await fetch('/admin/category', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: name, manufacturing: manu }),
-        });
-        if (res.ok) return location.reload();
-        alert(await res.text());
-      });
-
-      // --- 카테고리 삭제 ---
-      document.querySelectorAll('.deleteCat').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-          if (!confirm('카테고리를 삭제하시겠습니까?')) return;
-          const id = btn.closest('li').dataset.id;
-          const res = await fetch(`/admin/category/${id}`, { method: 'DELETE' });
-          if (res.ok) return location.reload();
-          alert(await res.text());
-        });
-      });
-
-      // --- 카테고리 드래그 앤 드롭 순서 변경 ---
-      new Sortable(document.getElementById('categoryList'), {
-        animation: 150,
-        onEnd: async () => {
-          const orderedIds = Array.from(document.querySelectorAll('#categoryList li')).map((li) => li.dataset.id);
-          const res = await fetch('/admin/category/order', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ order: orderedIds }),
-          });
-          if (!res.ok) alert(await res.text());
-        },
       });
     </script>
   </body>

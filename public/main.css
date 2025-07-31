@@ -4,7 +4,9 @@
   font-weight: 400;
   font-style: normal;
 }
-
+* {
+  -webkit-text-size-adjust: none;
+}
 body {
   margin: 0;
 }
@@ -12,10 +14,13 @@ a {
   text-decoration-line: none;
 }
 .nav {
-  background: white;
+  position: sticky;
+  top: 0;
+  height: 50px;
   display: flex;
-  padding: 15px;
   align-items: center;
+  padding: 0 15px;
+  background: #fff;
   font-weight: 600;
 }
 
@@ -40,30 +45,29 @@ a {
 }
 
 .category-bar {
-  -ms-overflow-style: none;
-  background: white;
-  display: flex;
-  overflow-x: auto;
-  padding: 10px 15px;
-  gap: 10px;
   position: sticky;
-  top: 0;
+  top: 50px;
   z-index: 9;
+  display: flex;
+  gap: 10px;
+  padding: 10px 15px;
+  background: #fff;
+  overflow-x: auto;
 }
 .category-bar::-webkit-scrollbar {
   display: none;
 }
 
 .category-button {
-  background: #f2f2f2;
-  color: #737373;
+  padding: 7px 15px;
   border: none;
   border-radius: 20px;
-  padding: 7px 15px;
+  background: #f2f2f2;
+  color: #737373;
   font-weight: 600;
   cursor: pointer;
-  white-space: nowrap;
   transition: background 0.3s;
+  white-space: nowrap;
 }
 
 .category-button.active {
@@ -79,6 +83,10 @@ a {
   padding: 5px 10px 0;
 }
 
+.menu-section{
+  border-bottom: 1px solid #eee;
+}
+
 .payment-container,
 .confirm-container {
   margin-top: 10vh;
@@ -88,23 +96,18 @@ a {
   text-align: center; /* 텍스트 가운데 정렬 */
 }
 
-.section-divider {
-  height: 5px;
-  background: #eee;
-}
-
 .menu-section h3,
 .cart-section h3,
 .payment-container h3,
 .confirm-container h3 {
-  font-weight: 700;
-  font-size: 16px;
   margin: 0 5px;
   padding: 10px 0 5px;
+  font-size: 16px;
+  font-weight: 600;
 }
 
-.cart-section h3 {
-  font-weight: 600;
+.menu-section h3 {
+  font-weight: 700;
 }
 
 .payment-container h3,
@@ -115,27 +118,46 @@ a {
   line-height: 1.5;
 }
 
+.payment-container,
+.confirm-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-top: 10vh;
+}
+
 .confirm-container h3 {
+  margin-top: 10px; /*아이콘과 간격 조절 */
   font-weight: 500;
-  margin-top: 10px; /* 아이콘과 간격 조절 */
 }
 .confirm-subtext {
-  font-size: 13px;
-  color: #888;
-  margin-top: 4px;
   display: block;
+  margin-top: 4px;
+  font-size: 13px;
   line-height: 1.4;
+  color: #888;
 }
 .account {
-  text-align: center;
-  font-size: 14px;
-  color: #222;
-  padding: 10px 0 5px;
   margin: 0 5px;
+  padding: 10px 0 5px;
+  font-size: 14px;
+  text-align: center;
+  color: #222;
 }
 .account-number {
   text-decoration-line: underline;
   text-decoration-thickness: 1px;
+}
+
+.section-divider,
+.menu-divider {
+  display: block;
+  height: 5px;
+  background: #eee;
+}
+.menu-divider {
+  height: 1px;
 }
 
 .list-box {
@@ -143,21 +165,27 @@ a {
 }
 
 .list-box.cart-items {
-  padding: 20px 0;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-}
-
-.menu-divider {
-  height: 1px;
-  background-color: #eee;
+  justify-content: space-between;
+  padding: 20px 0;
 }
 
 .list-box h4 {
   font-size: 14px;
   margin: 2px 5px;
   font-weight: 600;
+}
+/* 품절된 메뉴 텍스트를 회색으로 */
+.list-box.sold-out h4,
+.list-box.sold-out .price,
+.list-box.sold-out .description {
+  color: gray;
+}
+
+.list-box.sold-out {
+  cursor: not-allowed;
+  pointer-events: none; 
 }
 
 .price {
@@ -190,26 +218,26 @@ a {
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.15);
-  /* transform: translateY(100%); */
   transition: transform 0.3s ease-in-out;
   z-index: 1000;
-}
-.show {
-  display: block;
-}
-.hidden {
-  display: none;
 }
 .bottom-sheet-content {
   padding: 20px;
   text-align: left;
 }
 
+.show {
+  display: block;
+}
+.hidden {
+  display: none;
+}
+
 /* 상단 좌우 정렬: 메뉴명 / 닫기 버튼 */
 .sheet-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin: 15px 0 10px;
 }
 .sheet-header h4 {

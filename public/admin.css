@@ -1,67 +1,79 @@
 @font-face {
   font-family: 'Pretendard-Regular';
   src: url('https://fastly.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff') format('woff');
-  font-weight: 400;
   font-style: normal;
+  font-weight: 400;
+}
+
+* {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   margin: 0;
 }
+
 .home-page,
 .server-page,
 .kitchen-page,
 .menu-page {
-  background: white;
+  background: #fff;
   padding: 20px 16px;
 }
-/* 상단 바 (바 아이콘 + 페이지 제목) */
+
+.menu-page {
+  padding: 0 16px;
+}
+
 .topbar {
   position: sticky;
   top: 0;
-  left: 0;
-  width: 100%;
   height: 50px;
   display: flex;
   align-items: center;
   background: #fff;
   padding: 0 16px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-weight: 600;
+  /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); */
   z-index: 1001;
 }
+
 #nav-bars {
   font-size: 24px;
   cursor: pointer;
 }
+
 .page-title {
   margin-left: 12px;
   font-size: 16px;
   font-weight: 700;
 }
 
-/* 오프캔버스 사이드바 */
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
   width: 150px;
   height: 100%;
+  padding-top: 60px;
   background: #272727;
-  padding-top: 60px; /* topbar 높이 만큼 띄우기 */
   transform: translateX(-100%);
   transition: transform 0.3s ease;
   z-index: 1000;
 }
+
 .sidebar.open {
   transform: translateX(0);
 }
+
 .sidebar a {
-  font-size: 16px;
   display: block;
   padding: 12px 16px;
+  font-size: 16px;
   color: #ecf0f1;
   text-decoration: none;
 }
+
 .sidebar a:hover {
   background: #34495e;
 }
@@ -69,53 +81,61 @@ body {
 .table-filter {
   margin: 12px 0;
 }
+
 .filter-btn {
-  background-color: #1f556f;
-  color: white;
-  border: 1px solid #123;
+  display: inline-block;
   padding: 6px 12px;
   margin-right: 6px;
-  cursor: pointer;
+  border: 1px solid #123;
   border-radius: 4px;
+  background: #1f556f;
+  color: #fff;
+  cursor: pointer;
 }
+
 .filter-btn.active {
-  background-color: #123;
+  background: #123;
 }
 
 .order-card {
-  background-color: #1f556f;
-  color: white;
+  background: #1f556f;
+  color: #fff;
   border-radius: 6px;
   padding: 12px;
   margin-bottom: 12px;
 }
+
 .order-header {
   display: flex;
   justify-content: space-between;
   font-size: 14px;
   margin-bottom: 8px;
 }
+
 .order-items label {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 4px;
 }
+
 .item-checkbox {
   width: 16px;
   height: 16px;
   accent-color: #ff9900;
 }
+
 .btn-serve-order {
-  background-color: #28a745;
-  border: none;
   padding: 8px 16px;
+  border: none;
   border-radius: 4px;
+  background: #28a745;
+  color: #fff;
   cursor: pointer;
-  color: white;
 }
+
 .btn-serve-order:disabled {
-  background-color: #ccc;
+  background: #ccc;
   cursor: not-allowed;
 }
 
@@ -125,158 +145,231 @@ body {
 
 .notice-bar {
   position: sticky;
-  left: 0;
+  top: 0;
   width: 100%;
-  background-color: transparent;
+  padding: 20px 16px;
+  box-sizing: border-box;
+  background: transparent;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px 16px;
   z-index: 999;
-  box-sizing: border-box;
 }
 
 .notice-bar p {
   padding: 40px;
 }
 
-/* ─── 테이블 스타일 ───────────────────────────────────────── */
-#menuTable {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 24px;
+.menu-cards,
+.cards-wrapper {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
 }
 
-#menuTable th,
-#menuTable td {
+.menu-card {
+  position: relative;
+  background: #fff;
+  border-radius: 8px;
   padding: 12px;
-  border: 1px solid #e0e0e0;
-  text-align: left;
-  vertical-align: middle;
-  font-size: 0.9rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-#menuTable th {
-  background-color: #fafafa;
+.menu-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.menu-card h2,
+.menu-card h3 {
+  margin: 0;
+}
+
+.menu-card h2 {
+  font-size: 16px;
+}
+
+.menu-card h3 {
+  font-size: 15px;
+}
+
+.menu-card p {
+  margin: 6px 0;
+  font-size: 14px;
+}
+
+.menu-card .price {
   font-weight: 600;
 }
 
-/* 입력 폼 & 버튼 스타일 */
-#menuTable input,
-#menuTable select {
-  width: 100%;
-  box-sizing: border-box;
-  font-size: 0.9rem;
+.menu-card .category,
+.menu-card .status.off {
+  color: #555;
+}
+
+.menu-card .description {
+  font-size: 14px;
+  color: #666;
+}
+
+.menu-card .status.on {
+  margin: 6px 0 0;
+  color: green;
+}
+.menu-card .status.off {
+  margin: 6px 0 0;
+  color: red;
+}
+
+.delete-form {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.delete-icon {
+  padding: 4px;
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  color: #e74c3c;
+  cursor: pointer;
+}
+
+.delete-icon:hover {
+  color: #c0392b;
+}
+
+.menu-card.new-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #888;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.menu-card.new-card i {
+  margin-bottom: 6px;
+}
+
+.edit-page {
+  max-width: 480px;
+  padding: 16px;
+}
+
+.edit-page form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.edit-page label {
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+.edit-page input,
+.edit-page select,
+.edit-page textarea {
   padding: 8px;
+  font-size: 14px;
   border: 1px solid #ccc;
   border-radius: 6px;
 }
 
-#menuTable button {
-  font-size: 0.9rem;
-  padding: 8px 12px;
+.edit-page button {
+  padding: 10px;
   border: none;
   border-radius: 6px;
-  background-color: #4a90e2;
-  color: white;
+  background: #4a90e2;
+  color: #fff;
   cursor: pointer;
-  min-height: 36px;
-  min-width: 60px;
 }
 
-#menuTable button:hover {
-  background-color: #357ab8;
+.edit-page .cancel-btn {
+  display: block;
+  margin-top: 8px;
+  text-align: center;
+  color: #777;
+  text-decoration: none;
 }
 
-/* ─── 카테고리 설정 스타일 ───────────────────────────────── */
-.category-settings {
-  border-top: 1px solid #ddd;
-  padding-top: 16px;
-}
-
-.category-settings h2 {
-  font-size: 1.2rem;
-  margin-bottom: 12px;
-}
-
-#categoryList {
+.category-tabs {
+  position: sticky;
+  top: 50px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
-  list-style: none;
-  padding: 0;
+  gap: 10px;
+  padding: 8px 16px;
+  overflow-x: auto;
+  background: #fff;
+  z-index: 999;
 }
 
-#categoryList li {
+.category-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.category-tabs .tab-btn {
+  padding: 7px 15px;
+  border: none;
+  border-radius: 20px;
+  background: #f2f2f2;
+  color: #737373;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s;
+  white-space: nowrap;
+}
+
+.category-tabs .tab-btn.active {
+  background: #222;
+  color: #fff;
+}
+
+.category-section {
+  padding: 0;
+  margin: 5px 0 0;
+}
+
+.category-title {
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.fab {
+  position: fixed;
+  bottom: 10vw;
+  right: 10vw;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  background-color: #fff;
-  border-radius: 6px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  justify-content: center;
+  padding: 0;
+  font-size: 2.4rem;
+  border: none;
+  border-radius: 50%;
+  background: #222;
+  color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-decoration: none;
+  cursor: pointer;
+  z-index: 1000;
 }
 
-.category-settings .add-category {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.fab i {
+  margin: 0;
+  pointer-events: none;
 }
 
-.category-settings .add-category input,
-.category-settings .add-category select {
-  flex: 1;
-  min-width: 120px;
+.fab:hover {
+  background: #2e2e2e;
 }
 
-/* ─── 반응형: 모바일 편집용 ───────────────────────────────── */
-@media (max-width: 768px) {
-  /* 테이블 전체를 스크롤 가능하도록 */
-  #menuTable {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-
-  /* 테이블을 카드형으로 변경하려면 아래 주석 해제 후 data-label 속성 추가 필요 */
-  /*
-  #menuTable thead {
-    display: none;
-  }
-  #menuTable tr {
-    display: block;
-    margin-bottom: 16px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 12px;
-  }
-  #menuTable td {
-    display: flex;
-    justify-content: space-between;
-    padding: 6px 0;
-  }
-  #menuTable td:before {
-    content: attr(data-label);
-    font-weight: 600;
-    flex: 1;
-  }
-*/
-
-  /* 폼 요소 터치 영역 확대 */
-  #menuTable input,
-  #menuTable select,
-  #menuTable button {
-    font-size: 1rem;
-    padding: 10px;
-  }
-
-  /* 카테고리 설정 항목도 스크롤 가능 */
-  #categoryList {
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-  #categoryList li {
-    flex: 0 0 auto;
-  }
+.fab:focus {
+  outline: none;
 }

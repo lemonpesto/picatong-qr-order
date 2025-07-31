@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= pageTitle %></title>
+  <link rel="stylesheet" href="/admin.css">
+  <script src="https://kit.fontawesome.com/a3ff865f92.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <%- include('./partial/sidebar') %>
+  <div class="edit-page">
+    <button id="delete-btn" class="delete-icon">
+      <i class="fa-solid fa-trash-can"></i>
+    </button>
+    <h3><%= "메뉴 편집" %></h3>
+    <form id="edit-form" action="/admin/menu/<%= menu._id %>" method="POST">      
+      <label>메뉴명</label>
+      <input name="name" value="<%= menu.name %>" required>
+
+      <label>가격</label>
+      <input name="price" type="number" value="<%= menu.price %>" required>
+
+      <label>카테고리</label>
+      <select name="category">
+        <% categories.forEach(cat => { %>
+          <option value="<%= cat.name %>" <%= menu.category===cat.name?'selected':'' %>>
+            <%= cat.name %>
+          </option>
+        <% }) %>
+      </select>
+
+      <label>설명</label>
+      <textarea name="description"><%= menu?.description || '' %></textarea>
+
+      <label>상태</label>
+      <select name="status">
+        <option value="true" <%= menu?.isActive?'selected':'' %> >판매중</option>
+        <option value="false" <%= !menu?.isActive?'selected':'' %> >품절</option>
+      </select>
+
+      <button type="submit">저장</button>
+      <a href="/admin/menu" class="cancel-btn">취소</a>
+    </form>
+  </div>
+  <script>
+      // 메뉴 수정 시 실시간으로 손님 페이지에도 보여지게. (품절 표시)
+      const socket = io();
+      const editForm = document.getElementById('edit-form');
+
+      editForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!confirm('정말 저장하시겠습니까?')) return;
+
+        // 폼 데이터 수집
+        const formData = new FormData(editForm);
+        const payload = {
+          name: formData.get('name'),
+          price: formData.get('price'),
+          category: formData.get('category'),
+          description: formData.get('description'),
+          status: formData.get('status'),
+        };
+
+        // JSON으로 POST
+        const res = await fetch(editForm.action, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      });
+  </script>
+  <script>
+    document.getElementById('delete-btn').addEventListener('click', async () => {
+      if (!confirm('정말 삭제하시겠습니까?')) return;
+      const id = '<%= menu._id %>';
+      const res = await fetch(`/admin/menu/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        // 예: 리다이렉트
+        window.location.href = '/admin/menu';
+      } else {
+        alert('삭제에 실패했습니다.');
+      }
+    });
+  </script>
+</body>
+</html>
