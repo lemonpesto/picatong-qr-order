@@ -12,15 +12,15 @@
     <!-- 카테고리 목차 -->
     <div class="category-bar">
       <% categories.forEach((cat, i) => { %>
-      <button class="category-button" data-target="section-<%= cat.internalName %>"><%= cat.displayName %></button>
+      <button class="category-button" data-target="section-<%= cat.name %>"><%= cat.name %></button>
       <% }) %>
     </div>
 
     <!-- 메뉴 리스트 -->
     <% categories.forEach((cat, i) => { %>
-    <div id="section-<%= cat.internalName %>" class="menu-section">
-      <h3><%= cat.displayName %></h3>
-      <% const filteredMenus = menus.filter(m => m.category === cat.internalName); filteredMenus.forEach((menu, j) => { %>
+    <div id="section-<%= cat.name %>" class="menu-section">
+      <h3><%= cat.name %></h3>
+      <% const filteredMenus = menus.filter(m => m.category === cat.name); filteredMenus.forEach((menu, j) => { %>
       <div class="list-box" data-name="<%= menu.name %>" data-price="<%= menu.price %>" data-menuid="<%= menu._id %>">
         <h4><%= menu.name %></h4>
         <p class="price"><%= menu.price.toLocaleString() %>원</p>

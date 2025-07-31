@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>피카통 호프 관리</title>
-    <link rel="stylesheet" href="/main.css" />
+    <link rel="stylesheet" href="/admin.css" />
+    <script src="https://kit.fontawesome.com/a3ff865f92.js" crossorigin="anonymous"></script>
   </head>
   <body>
     <!-- /views/admin/kitchen.ejs -->
@@ -12,7 +13,7 @@
     <%- include('./partial/sidebar') %>
 
     <div class="kitchen-page">
-      <h1>주방 페이지</h1>
+      <!-- <h1>주방 페이지</h1> -->
 
       <% kitchenOrders.forEach(order => { %>
       <div class="order-card" data-order-id="<%= order._id %>">
@@ -28,43 +29,115 @@
         <button class="complete-order-btn">요리완료</button>
       </div>
       <% }) %>
+      <div class="notice-bar <%= kitchenOrders.length > 0 ? 'hidden' : '' %>">
+        <p>주문이 없습니다</p>
+      </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      const socket = io();
-      // 각 주문 방에 join
-      document.querySelectorAll('.order-card').forEach((card) => {
-        socket.emit('joinOrderRoom', card.dataset.orderId);
-      });
+      document.addEventListener('DOMContentLoaded', () => {
+        const socket = io();
+        const container = document.querySelector('.kitchen-page');
+        const notice = document.querySelector('.notice-bar');
 
-      // 개별 메뉴 체크 → 바로 DB 업데이트, 서버 페이지에도 알림
-      document.querySelectorAll('.cook-checkbox').forEach((chk) => {
-        chk.addEventListener('change', async (e) => {
-          const orderId = e.target.closest('.order-card').dataset.orderId;
-          const menuId = e.target.closest('li').dataset.menuId;
-          // checked 상태에 따라 호출할 API 결정
-          const url = e.target.checked ? '/admin/kitchen/item-cooked' : '/admin/kitchen/item-uncook';
-          await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderId, menuId }),
+        function updateNotice() {
+          const hasOrder = !!document.querySelector('.order-card');
+          notice.classList.toggle('hidden', hasOrder);
+        }
+
+        // 카드에 소켓 방 참가 및 이벤트 바인딩
+        function bindCard(card, orderId) {
+          // join room
+          socket.emit('joinOrderRoom', orderId);
+
+          // 개별 조리 체크박스
+          card.querySelectorAll('.cook-checkbox').forEach((chk) => {
+            chk.addEventListener('change', async (e) => {
+              const menuId = e.target.closest('li').dataset.menuId;
+              const url = e.target.checked ? '/admin/kitchen/item-cooked' : '/admin/kitchen/item-uncook';
+              await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId, menuId }),
+              });
+            });
           });
+
+          // 요리완료 버튼
+          const btn = card.querySelector('.complete-order-btn');
+          btn.addEventListener('click', async () => {
+            // 모두 체크 표시
+            card.querySelectorAll('.cook-checkbox').forEach((c) => (c.checked = true));
+            await fetch('/admin/kitchen/complete-order', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ orderId }),
+            });
+            card.remove();
+            updateNotice();
+          });
+        }
+
+        // 1) 초기 카드 바인딩
+        socket.on('connect', () => {
+          document.querySelectorAll('.order-card').forEach((card) => {
+            const orderId = card.dataset.orderId;
+            bindCard(card, orderId);
+          });
+          updateNotice();
         });
-      });
 
-      // “요리완료” 버튼 클릭 → 모든 체크박스 강제 체크 + 전체 완료 API 호출 + 카드 제거
-      document.querySelectorAll('.complete-order-btn').forEach((btn) => {
-        btn.addEventListener('click', async (e) => {
-          const card = e.target.closest('.order-card');
-          const orderId = card.dataset.orderId;
-          card.querySelectorAll('.cook-checkbox').forEach((c) => (c.checked = true));
+        // 2) 새 결제 완료 주문 추가
+        socket.on('orderPaid', (order) => {
+          // 제조 메뉴만 필터
+          const items = order.items.filter((i) => i.manufacturing);
+          if (!items.length) return;
 
-          await fetch('/admin/kitchen/complete-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderId }),
-          });
-          card.remove();
+          const card = document.createElement('div');
+          card.className = 'order-card';
+          card.dataset.orderId = order._id;
+          card.innerHTML = `
+      <h2>${order._id}｜테이블${order.tableNum}</h2>
+      <p>${new Date(order.requestedAt).toLocaleString()}</p>
+      <ul>
+        ${items
+          .map(
+            (item) => `
+          <li data-menu-id="${item.menuId}">
+            <label>
+              <input type="checkbox" class="cook-checkbox" />
+              ${item.menuName} x${item.qty}
+            </label>
+          </li>`
+          )
+          .join('')}
+      </ul>
+      <button class="complete-order-btn">요리완료</button>
+    `;
+          container.appendChild(card);
+          bindCard(card, order._id);
+          updateNotice();
+        });
+
+        // 3) 개별 메뉴 조리 완료/취소 반영
+        socket.on('itemCooked', ({ orderId, menuId }) => {
+          const card = document.querySelector(`.order-card[data-order-id="${orderId}"]`);
+          const chk = card?.querySelector(`li[data-menu-id="${menuId}"] .cook-checkbox`);
+          if (chk) chk.checked = true;
+        });
+        socket.on('itemUncooked', ({ orderId, menuId }) => {
+          const card = document.querySelector(`.order-card[data-order-id="${orderId}"]`);
+          const chk = card?.querySelector(`li[data-menu-id="${menuId}"] .cook-checkbox`);
+          if (chk) chk.checked = false;
+        });
+
+        // 4) 전체 요리 완료 반영 (다른 창에서)
+        socket.on('orderCooked', (orderId) => {
+          const card = document.querySelector(`.order-card[data-order-id="${orderId}"]`);
+          if (card) {
+            card.remove();
+            updateNotice();
+          }
         });
       });
     </script>

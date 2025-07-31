@@ -13,32 +13,141 @@ module.exports = (io) => {
       console.log(err);
     });
 
+  // 메뉴 관리
   router.get('/menu', async (요청, 응답) => {
-    let result = await db.collection('menus').find().toArray();
-    응답.render('admin-menu.ejs', { menus: result });
+    try {
+      const menus = await db.collection('menus').find().toArray();
+      const categories = await db.collection('categories').find().toArray();
+      응답.render('admin/menu', {
+        menus,
+        categories,
+        pageTitle: '메뉴관리',
+      });
+    } catch (e) {
+      console.error(e);
+      응답.status(500).send('서버 오류');
+    }
   });
 
-  router.post('/menu', (요청, 응답) => {
-    upload.single('img1')(요청, 응답, async (err) => {
-      if (err) return 응답.send('이미지 업로드 에러');
-      try {
-        if (요청.body.title == '' || 요청.body.price == '') {
-          응답.send('다 입력해야 함.');
-        } else {
-          await db.collection('post').insertOne({
-            name: 요청.body.name,
-            price: 요청.body.price,
-            category: 요청.body.category,
-            isActive: 요청.body.isActive == '판매 중' ? true : false,
-            img: 요청.file ? 요청.file.location : '',
-          });
-          응답.redirect('/list');
-        }
-      } catch (e) {
-        console.log(e);
-        응답.status(500).send('서버 에러');
+  router.post('/menu', async (요청, 응답) => {
+    try {
+      const { name, price, category, description, isActive } = 요청.body;
+      if (!name || !price) {
+        return 응답.status(400).send('모든 항목을 입력해야 합니다.');
       }
-    });
+      // 카테고리 문서에서 manufacturing 불러오기
+      const catDoc = await db.collection('categories').findOne({ name: category });
+      const manufacturing = catDoc ? catDoc.manufacturing : '';
+
+      await db.collection('menus').insertOne({
+        name,
+        price: parseInt(price),
+        category,
+        description,
+        isActive: isActive === 'true',
+        manufacturing,
+      });
+      응답.status(201).send();
+    } catch (e) {
+      console.error(e);
+      응답.status(500).send('서버 에러');
+    }
+  });
+
+  // 메뉴 삭제
+  router.delete('/menu', async (req, res) => {
+    try {
+      const { id } = req.query;
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).send('유효하지 않은 ID');
+      }
+      await db.collection('menus').deleteOne({ _id: new ObjectId(id) });
+      res.send('삭제되었습니다.');
+    } catch (e) {
+      console.error(e);
+      res.status(500).send('서버 에러');
+    }
+  });
+
+  // 메뉴 수정
+  router.put('/menu', async (req, res) => {
+    try {
+      const { id } = req.query;
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).send('유효하지 않은 ID');
+      }
+      const { name, price, category, status } = req.body;
+      const updateDoc = {
+        name,
+        price: parseInt(price),
+        category,
+        description,
+        status: status === 'true',
+      };
+      // 변경된 카테고리에 맞게 manufacturing 업데이트
+      const catDoc = await db.collection('categories').findOne({ name: category });
+      if (catDoc) updateDoc.manufacturing = catDoc.manufacturing;
+
+      await db.collection('menus').updateOne({ _id: new ObjectId(id) }, { $set: updateDoc });
+      res.send('수정되었습니다.');
+    } catch (e) {
+      console.error(e);
+      res.status(500).send('서버 에러');
+    }
+  });
+
+  // (2) 카테고리 생성
+  router.post('/category', async (req, res) => {
+    const { name, manufacturing } = req.body;
+    if (!name || !manufacturing) {
+      return res.status(400).send('모든 필드를 입력하세요.');
+    }
+    // 현재 가장 큰 order 값 찾기
+    const last = await db.collection('categories').find().sort({ order: -1 }).limit(1).toArray();
+    const nextOrder = last[0] ? last[0].order + 1 : 0;
+    await db.collection('categories').insertOne({ name, manufacturing, order: nextOrder });
+    res.status(201).send();
+  });
+
+  // (3) 카테고리 순서 변경
+  router.put('/category/order:id', async (req, res) => {
+    const { id } = req.params;
+    const { direction } = req.body; // -1 이면 위로, +1 이면 아래로
+    if (!ObjectId.isValid(id)) return res.status(400).send('잘못된 ID');
+
+    const cat = await db.collection('categories').findOne({ _id: new ObjectId(id) });
+    if (!cat) return res.status(404).send('카테고리 없음');
+
+    // 교환 대상 찾기
+    const swap = await db.collection('categories').findOne({ order: cat.order + direction });
+    if (!swap) return res.status(400).send('더 이동할 수 없습니다.');
+
+    // 두 문서의 order 값 스왑
+    await db.collection('categories').updateOne({ _id: cat._id }, { $set: { order: swap.order } });
+    await db.collection('categories').updateOne({ _id: swap._id }, { $set: { order: cat.order } });
+    res.send('순서가 변경되었습니다.');
+  });
+
+  // (4) 카테고리 삭제
+  router.delete('/category/:id', async (req, res) => {
+    const { id } = req.params;
+    if (!ObjectId.isValid(id)) return res.status(400).send('잘못된 ID');
+    await db.collection('categories').deleteOne({ _id: new ObjectId(id) });
+    res.send('삭제되었습니다.');
+  });
+
+  // (5) 카테고리 순서 일괄 업데이트
+  router.put('/category/order', async (req, res) => {
+    const { order } = req.body; // [id1, id2, ...]
+    if (!Array.isArray(order)) return res.status(400).send('잘못된 요청');
+    const ops = order.map((id, idx) => ({
+      updateOne: {
+        filter: { _id: new ObjectId(id) },
+        update: { $set: { order: idx } },
+      },
+    }));
+    await db.collection('categories').bulkWrite(ops);
+    res.send('순서가 저장되었습니다.');
   });
 
   // /admin/server
@@ -68,7 +177,7 @@ module.exports = (io) => {
 
       const tableNum = await db.collection('tables').countDocuments();
 
-      응답.render('admin/server', { unpaidOrders, serveOrders, tableNum });
+      응답.render('admin/server', { unpaidOrders, serveOrders, tableNum, pageTitle: '서버' });
     } catch (err) {
       console.error('🚨 /admin/server 조회 중 오류:', err);
       res.status(500).send('서버 오류');
@@ -79,8 +188,13 @@ module.exports = (io) => {
   router.post('/server/confirm', async (요청, 응답) => {
     const id = new ObjectId(요청.query.id);
     await db.collection('orders').updateOne({ _id: id }, { $set: { paid: true, confirmedAt: new Date() } });
-    // 1) 해당 주문 ID 방에 이벤트 발송
+    // 고객 confirm 페이지 알림
     io.to(요청.query.id).emit('orderConfirmed');
+
+    // 서빙 탭 실시간 업데이트용으로, 모든 관리자 클라이언트에 새 결제 완료 주문 푸시
+    const paidOrder = await db.collection('orders').findOne({ _id: id });
+    io.emit('orderPaid', paidOrder);
+
     응답.send('송금확인이 완료되었습니다.');
   });
 
@@ -115,7 +229,7 @@ module.exports = (io) => {
         items: o.items.filter((i) => manuIds.includes(i.menuId.toString())),
       }))
       .filter((o) => o.items.length);
-    res.render('admin/kitchen', { kitchenOrders });
+    res.render('admin/kitchen', { kitchenOrders, pageTitle: '주방' });
   });
 
   // 개별 메뉴 “요리됨” 체크 API

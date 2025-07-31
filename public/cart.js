@@ -15,18 +15,27 @@ async function updateInfo() {
     const res = await fetch('/cart/summary');
     const data = await res.json(); // { total: 12000, count: 3 }
 
-    // 안내 문구
+    // 빈 장바구니 섹션
+    const noticeSection = document.querySelector('.notice-bar');
+
+    // 채워진 장바구니 섹션
+    const cartSection = document.querySelector('.cart-section');
+    const secDiv = document.querySelector('.section-divider');
     const totalQtySpan = document.querySelector('.total-qty');
     totalQtySpan.innerHTML = `선택한 메뉴 <span class="highlight">${data.count}</span>개`;
-
-    // 주문 버튼
     const orderBtn = document.getElementById('order');
+
     if (data.count > 0) {
-      orderBtn.innerHTML = `총 <span class="highlight-orange">${data.total.toLocaleString()}원</span> 주문하기 (${data.count})`;
+      orderBtn.innerHTML = `총 ${data.total.toLocaleString()}</span>원 주문하기 (${data.count})`;
+      cartSection.classList.remove('hidden');
+      secDiv.classList.remove('hidden');
       orderBtn.classList.remove('hidden');
+      noticeSection.style.display = 'none';
     } else {
+      cartSection.classList.add('hidden');
+      secDiv.classList.add('hidden');
       orderBtn.classList.add('hidden');
-      totalQtySpan.textContent = '장바구니가 비어 있습니다';
+      noticeSection.style.display = 'flex';
     }
   } catch (err) {
     console.error('장바구니 요약 정보 실패:', err);

@@ -18,6 +18,7 @@ a {
   align-items: center;
   font-weight: 600;
 }
+
 .nav a {
   margin-right: 10px;
 }
@@ -39,6 +40,7 @@ a {
 }
 
 .category-bar {
+  -ms-overflow-style: none;
   background: white;
   display: flex;
   overflow-x: auto;
@@ -47,6 +49,9 @@ a {
   position: sticky;
   top: 0;
   z-index: 9;
+}
+.category-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .category-button {
@@ -276,6 +281,7 @@ a {
   padding: 10px;
   font-size: 16px;
   background-color: #ff9900;
+  font-weight: 500;
   color: white;
   border: none;
   border-radius: 5px;
@@ -300,6 +306,37 @@ a {
 
 .toast-msg.show {
   opacity: 1;
+}
+
+.notice-bar {
+  position: sticky;
+  left: 0;
+  width: 100%;
+  background-color: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 16px;
+  z-index: 999;
+  box-sizing: border-box;
+}
+
+.notice-bar p {
+  padding: 40px;
+}
+
+.notice-button {
+  width: 100%;
+  max-width: 200px;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  /* background-color: white; */
+  border: solid 1.5px #ff8c00;
+  color: #ff8c00;
+  text-align: center;
+  border-radius: 2px;
+  cursor: pointer;
 }
 
 .bottom-bar {

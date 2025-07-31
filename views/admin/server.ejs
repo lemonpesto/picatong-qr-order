@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>피카통 호프 관리</title>
     <link rel="stylesheet" href="/admin.css" />
+    <script src="https://kit.fontawesome.com/a3ff865f92.js" crossorigin="anonymous"></script>
   </head>
   <body>
     <!-- /views/admin/server.ejs -->
@@ -12,7 +13,7 @@
     <%- include('./partial/sidebar') %>
 
     <div class="server-page">
-      <h1>서버 페이지</h1>
+      <!-- <h1>서버 페이지</h1> -->
 
       <div class="server-tabs">
         <button id="tab-paid" class="active">송금 확인</button>
@@ -45,6 +46,9 @@
           </div>
         </div>
         <% }) %>
+        <div class="notice-bar <%= unpaidOrders.length > 0 ? 'hidden' : '' %>">
+          <p>주문이 없습니다</p>
+        </div>
       </div>
 
       <!-- 서빙 목록 -->
@@ -73,6 +77,9 @@
           </div>
         </div>
         <% }) %>
+        <div class="notice-bar <%= serveOrders.length > 0 ? 'hidden' : '' %>">
+          <p>서빙할 음식이 없습니다</p>
+        </div>
       </div>
     </div>
 
@@ -172,7 +179,112 @@
             socket.emit('joinOrderRoom', orderId);
           });
         });
+        // 🔔 새 주문 도착했을 때
+        socket.on('newOrder', (order) => {
+          console.log('📬 newOrder:', order);
 
+          // 1) 카드 DOM 생성
+          const card = document.createElement('div');
+          card.className = 'order-card';
+          card.dataset.table = order.tableNum;
+          card.dataset.id = order._id;
+
+          card.innerHTML = `
+            <div class="order-header">
+              <span>테이블${order.tableNum}</span>
+              <span>${new Date(order.requestedAt).toLocaleString()}</span>
+              <button class="btn-delete">삭제</button>
+            </div>
+            <div class="order-items">
+              <p class="items-list collapsed">
+                ${order.items.map((i) => `${i.menuName} x${i.qty}`).join(', ')}
+              </p>
+            </div>
+            <div class="order-footer">
+              <span class="order-total">${order.total.toLocaleString()}원</span>
+              <button class="btn-confirm-payment">송금 확인</button>
+            </div>
+          `;
+
+          // 2) 이벤트 핸들러 바인딩
+          const btnConfirm = card.querySelector('.btn-confirm-payment');
+          btnConfirm.addEventListener('click', async () => {
+            try {
+              const res = await fetch(`/admin/server/confirm?id=${order._id}`, { method: 'POST' });
+              alert(await res.text());
+              card.remove();
+            } catch {
+              alert('송금 확인 중 오류');
+            }
+          });
+          const btnDelete = card.querySelector('.btn-delete');
+          btnDelete.addEventListener('click', async () => {
+            if (!confirm('주문을 취소하시겠습니까?')) return;
+            try {
+              const res = await fetch(`/admin/server/delete?id=${order._id}`, { method: 'POST' });
+              alert(await res.text());
+              card.remove();
+            } catch {
+              alert('취소 중 오류');
+            }
+          });
+
+          // 3) 리스트 맨 위에 추가 (최신 주문이 위로)
+          paidList.prepend(card);
+        });
+        // ▶︎ 결제 완료 새 주문이 들어왔을 때
+        socket.on('orderPaid', (order) => {
+          console.log('💰 orderPaid 이벤트:', order);
+          // 1) 카드 HTML 생성
+          const cardHtml = `
+            <div class="order-card" data-table="${order.tableNum}" data-order-id="${order._id}">
+              <div class="order-header">
+                <span>T${order.tableNum}</span>
+                <span>${new Date(order.requestedAt).toLocaleString()}</span>
+              </div>
+              <div class="order-items">
+                <ul>
+                  ${order.items
+                    .map(
+                      (item) => `
+                    <li data-menu-id="${item.menuId}">
+                      <label>
+                        <input
+                          type="checkbox"
+                          class="serve-checkbox"
+                          ${item.manufacturing || item.cooked ? '' : 'disabled'}
+                          ${item.cooked ? 'checked' : ''}
+                        />
+                        ${item.menuName} x${item.qty}
+                      </label>
+                    </li>`
+                    )
+                    .join('')}
+                </ul>
+              </div>
+              <div class="order-footer">
+                <button
+                  class="btn-serve-complete"
+                  ${order.items.every((i) => i.manufacturing || i.cooked) ? '' : 'disabled'}
+                >서빙완료</button>
+              </div>
+            </div>`;
+          // 2) 서빙 리스트에 prepend
+          serveList.insertAdjacentHTML('afterbegin', cardHtml);
+
+          // 3) 방(join) 및 버튼 이벤트 바인딩
+          const newCard = serveList.querySelector(`.order-card[data-order-id="${order._id}"]`);
+          socket.emit('joinOrderRoom', order._id);
+
+          newCard.querySelector('.btn-serve-complete').addEventListener('click', async () => {
+            await fetch('/admin/server/serve-order', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ orderId: order._id }),
+            });
+            newCard.remove();
+          });
+        });
         // 주방에서 조리 체크 시 서버 페이지 체크박스 활성화
         socket.on('itemCooked', ({ orderId, menuId }) => {
           const card = document.querySelector(`.order-card[data-order-id="${orderId}"]`);
@@ -204,7 +316,6 @@
           if (!card) return;
           card.querySelectorAll('.serve-checkbox').forEach((chk) => {
             chk.disabled = false;
-            chk.checked = true;
           });
           // 서빙완료 버튼도 활성화
           card.querySelector('.btn-serve-complete').disabled = false;

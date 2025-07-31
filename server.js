@@ -164,17 +164,21 @@ app.post('/cart/add', async (요청, 응답) => {
 });
 
 app.get('/cart/summary', async (요청, 응답) => {
-  const tableId = 요청.user._id;
+  try {
+    const tableId = 요청.user._id;
+    const items = await db
+      .collection('cart')
+      .find({ tableId: new ObjectId(tableId) })
+      .toArray();
 
-  const items = await db
-    .collection('cart')
-    .find({ tableId: new ObjectId(tableId) })
-    .toArray();
+    const count = items.reduce((sum, it) => sum + it.qty, 0);
+    const total = items.reduce((sum, it) => sum + it.price * it.qty, 0);
 
-  const total = items.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const count = items.reduce((sum, item) => sum + item.qty, 0);
-
-  응답.json({ total, count });
+    return 응답.json({ count, total });
+  } catch (e) {
+    console.error(e);
+    return 응답.json({ count: 0, total: 0 });
+  }
 });
 
 // 장바구니 보기 페이지
@@ -292,9 +296,20 @@ app.post('/payment/confirm', async (요청, 응답) => {
     const result = await db.collection('orders').insertOne(orderDoc);
     const orderId = result.insertedId.toString();
 
-    // 장바구니 비우기
-    await db.collection('cart').deleteMany({ tableId: 요청.user._id });
+    // orderDoc 에 _id와 requestedAt 등을 포함해 보냅니다.
+    io.emit('newOrder', {
+      _id: orderId,
+      tableNum: orderDoc.tableNum,
+      items: orderDoc.items,
+      total: orderDoc.total,
+      requestedAt: orderDoc.requestedAt,
+      paid: orderDoc.paid,
+      completed: orderDoc.completed,
+      served: orderDoc.served,
+    });
 
+    // 장바구니 비우고 리다이렉트
+    await db.collection('cart').deleteMany({ tableId: 요청.user._id });
     응답.redirect(`/payment/confirm?orderId=${orderId}`);
   } catch (err) {
     console.error('❌ 주문 저장 실패:', err);

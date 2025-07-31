@@ -1,3 +1,71 @@
+@font-face {
+  font-family: 'Pretendard-Regular';
+  src: url('https://fastly.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+}
+
+body {
+  margin: 0;
+}
+.home-page,
+.server-page,
+.kitchen-page,
+.menu-page {
+  background: white;
+  padding: 20px 16px;
+}
+/* 상단 바 (바 아이콘 + 페이지 제목) */
+.topbar {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  padding: 0 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+}
+#nav-bars {
+  font-size: 24px;
+  cursor: pointer;
+}
+.page-title {
+  margin-left: 12px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* 오프캔버스 사이드바 */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 150px;
+  height: 100%;
+  background: #272727;
+  padding-top: 60px; /* topbar 높이 만큼 띄우기 */
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  z-index: 1000;
+}
+.sidebar.open {
+  transform: translateX(0);
+}
+.sidebar a {
+  font-size: 16px;
+  display: block;
+  padding: 12px 16px;
+  color: #ecf0f1;
+  text-decoration: none;
+}
+.sidebar a:hover {
+  background: #34495e;
+}
+
 .table-filter {
   margin: 12px 0;
 }
@@ -53,4 +121,162 @@
 
 .hidden {
   display: none;
+}
+
+.notice-bar {
+  position: sticky;
+  left: 0;
+  width: 100%;
+  background-color: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 16px;
+  z-index: 999;
+  box-sizing: border-box;
+}
+
+.notice-bar p {
+  padding: 40px;
+}
+
+/* ─── 테이블 스타일 ───────────────────────────────────────── */
+#menuTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+}
+
+#menuTable th,
+#menuTable td {
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  text-align: left;
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+#menuTable th {
+  background-color: #fafafa;
+  font-weight: 600;
+}
+
+/* 입력 폼 & 버튼 스타일 */
+#menuTable input,
+#menuTable select {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 0.9rem;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+#menuTable button {
+  font-size: 0.9rem;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background-color: #4a90e2;
+  color: white;
+  cursor: pointer;
+  min-height: 36px;
+  min-width: 60px;
+}
+
+#menuTable button:hover {
+  background-color: #357ab8;
+}
+
+/* ─── 카테고리 설정 스타일 ───────────────────────────────── */
+.category-settings {
+  border-top: 1px solid #ddd;
+  padding-top: 16px;
+}
+
+.category-settings h2 {
+  font-size: 1.2rem;
+  margin-bottom: 12px;
+}
+
+#categoryList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  list-style: none;
+  padding: 0;
+}
+
+#categoryList li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background-color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.category-settings .add-category {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.category-settings .add-category input,
+.category-settings .add-category select {
+  flex: 1;
+  min-width: 120px;
+}
+
+/* ─── 반응형: 모바일 편집용 ───────────────────────────────── */
+@media (max-width: 768px) {
+  /* 테이블 전체를 스크롤 가능하도록 */
+  #menuTable {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  /* 테이블을 카드형으로 변경하려면 아래 주석 해제 후 data-label 속성 추가 필요 */
+  /*
+  #menuTable thead {
+    display: none;
+  }
+  #menuTable tr {
+    display: block;
+    margin-bottom: 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 12px;
+  }
+  #menuTable td {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+  }
+  #menuTable td:before {
+    content: attr(data-label);
+    font-weight: 600;
+    flex: 1;
+  }
+*/
+
+  /* 폼 요소 터치 영역 확대 */
+  #menuTable input,
+  #menuTable select,
+  #menuTable button {
+    font-size: 1rem;
+    padding: 10px;
+  }
+
+  /* 카테고리 설정 항목도 스크롤 가능 */
+  #categoryList {
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  #categoryList li {
+    flex: 0 0 auto;
+  }
 }
