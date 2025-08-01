@@ -2,6 +2,7 @@
 module.exports = (io) => {
   const router = require('express').Router();
   const { MongoClient, ObjectId } = require('mongodb');
+  // app.use(express.json());
 
   let connectDB = require('./../database.js');
   let db;
@@ -17,7 +18,7 @@ module.exports = (io) => {
   router.get('/menu', async (요청, 응답) => {
     try {
       const menus = await db.collection('menus').find().toArray();
-      const categories = await db.collection('categories').find().toArray();
+      const categories = await db.collection('categories').find().sort({ order: 1 }).toArray();
       응답.render('admin/menu', {
         menus,
         categories,
@@ -39,6 +40,7 @@ module.exports = (io) => {
       res.status(500).send('서버 오류');
     }
   });
+
   // 메뉴 수정 폼
   router.get('/menu/:id/edit', async (req, res) => {
     try {
@@ -82,7 +84,7 @@ module.exports = (io) => {
         category,
         description,
         isActive,
-        manufacturing
+        manufacturing,
       };
 
       // 3) 모든 손님 페이지에 실시간 추가 이벤트 브로드캐스트
@@ -119,7 +121,7 @@ module.exports = (io) => {
       );
       const updatedMenu = result.value;
       io.emit('menuUpdated', updatedMenu);
-      res.redirect('/admin/menu');
+      res.json(result.value);
     } catch (err) {
       console.error(err);
       res.status(500).send('메뉴 수정 중 서버 에러');
@@ -137,13 +139,154 @@ module.exports = (io) => {
 
       // 실시간으로 모든 관리자에게 메뉴 삭제 알림
       io.emit('menuDeleted', id);
-      res.json(result.value)
+      res.json(result.value);
     } catch (err) {
       console.error(err);
       res.status(500).send('메뉴 삭제 중 서버 에러');
     }
   });
 
+  // /admin/server
+  router.get('/server', async (요청, 응답) => {
+    try {
+      // 미결제 주문 (송금확인 탭)
+      const unpaidOrders = await db.collection('orders').find({ paid: false }).sort({ requestedAt: 1 }).toArray();
+
+      // 결제 끝 && 서빙 전 주문 (서빙 탭)
+      const serveOrdersRaw = await db.collection('orders').find({ paid: true, served: false }).sort({ requestedAt: 1 }).toArray();
+
+      // 2) 모든 메뉴 가져와서 manufacturing 맵 생성
+      const allMenus = await db.collection('menus').find().toArray();
+      const manuMap = allMenus.reduce((m, x) => {
+        m[x._id.toString()] = x.manufacturing;
+        return m;
+      }, {});
+
+      // 3) 주문 아이템마다 manufacturing 필드 붙여주기
+      const serveOrders = serveOrdersRaw.map((o) => ({
+        ...o,
+        items: o.items.map((i) => ({
+          ...i,
+          manufacturing: manuMap[i.menuId.toString()] || false,
+        })),
+      }));
+
+      const tableNum = await db.collection('tables').countDocuments();
+
+      응답.render('admin/server', { unpaidOrders, serveOrders, tableNum, pageTitle: '서버' });
+    } catch (err) {
+      console.error('🚨 /admin/server 조회 중 오류:', err);
+      res.status(500).send('서버 오류');
+    }
+  });
+
+  // 송금 확인 처리
+  router.post('/server/confirm', async (요청, 응답) => {
+    const id = new ObjectId(요청.query.id);
+
+    try {
+      await db.collection('orders').updateOne({ _id: id }, { $set: { paid: true, confirmedAt: new Date() } });
+      // 고객 confirm 페이지 알림
+      io.to(요청.query.id).emit('orderConfirmed');
+      // 서빙 탭 실시간 업데이트용으로, 모든 관리자 클라이언트에 새 결제 완료 주문 푸시
+      // 주방 페이지 실시간 업데이트 기능 추가
+      const paidOrder = await db.collection('orders').findOne({ _id: id });
+      io.emit('orderPaid', paidOrder);
+      응답.send('송금확인이 완료되었습니다.');
+    } catch (err) {
+      console.error(err);
+      응답.status(500).send('결제 확인 중 오류가 발생했습니다.');
+    }
+  });
+
+  // 주문 취소 처리
+  router.post('/server/delete', async (요청, 응답) => {
+    const id = new ObjectId(요청.query.id);
+    try {
+      await db.collection('orders').deleteOne({ _id: id });
+      // 취소 알림
+      io.to(요청.query.id).emit('orderCancelled');
+      응답.send('주문이 취소되었습니다.');
+    } catch (err) {
+      console.error(err);
+      응답.status(500).send('삭제 중 오류가 발생했습니다.');
+    }
+  });
+
+  // 서빙 완료 API (변경 없음)
+  router.post('/server/serve-order', async (req, res) => {
+    const orderId = req.query.orderId;
+    await db.collection('orders').updateOne({ _id: new ObjectId(orderId) }, { $set: { served: true, servedAt: new Date() } });
+    io.to(orderId).emit('orderServed', orderId);
+    res.send('서빙이 완료되었습니다.');
+  });
+
+  // — 주방 페이지 —
+  router.get('/kitchen', async (req, res) => {
+    const orders = await db
+      .collection('orders')
+      .find({ paid: true, completed: false }) // 아직 요리완성되지 않은 주문
+      .toArray();
+
+    // 제조 음식만 필터링
+    const menus = await db.collection('menus').find({ manufacturing: true }).toArray();
+    const manuIds = menus.map((m) => m._id.toString());
+    const kitchenOrders = orders
+      .map((o) => ({
+        ...o,
+        items: o.items.filter((i) => manuIds.includes(i.menuId.toString())),
+      }))
+      .filter((o) => o.items.length);
+    res.render('admin/kitchen', { kitchenOrders, pageTitle: '주방' });
+  });
+
+  // 개별 메뉴 “요리됨” 체크 API
+  router.post('/kitchen/item-cooked', async (req, res) => {
+    const { orderId, menuId } = req.body;
+    await db
+      .collection('orders')
+      .updateOne({ _id: new ObjectId(orderId), 'items.menuId': new ObjectId(menuId) }, { $set: { 'items.$.cooked': true } });
+    io.to(orderId).emit('itemCooked', { orderId, menuId });
+    res.sendStatus(200);
+  });
+
+  router.post('/kitchen/item-uncook', async (req, res) => {
+    const { orderId, menuId } = req.body;
+    try {
+      // 해당 메뉴의 cooked를 false로 되돌림
+      await db
+        .collection('orders')
+        .updateOne({ _id: new ObjectId(orderId), 'items.menuId': new ObjectId(menuId) }, { $set: { 'items.$.cooked': false } });
+      // 실시간으로 서버 페이지에 알림
+      io.to(orderId).emit('itemUncooked', { orderId, menuId });
+      return res.sendStatus(200);
+    } catch (err) {
+      console.error('❌ item-uncook 실패:', err);
+      return res.status(500).send('서버 오류');
+    }
+  });
+
+  // 전체 요리완성(버튼) API
+  router.post('/kitchen/complete-order', async (req, res) => {
+    const { orderId } = req.body;
+    await db
+      .collection('orders')
+      .updateOne({ _id: new ObjectId(orderId) }, { $set: { completed: true, completedAt: new Date(), 'items.$[].cooked': true } });
+    io.to(orderId).emit('orderCooked', orderId);
+    res.send('요리가 완성되었습니다.');
+  });
+
+  // 주문 내역 페이지
+  router.get('/orders', async (req, res) => {
+    // 모든 주문을 요청 시각 내림차순으로 가져옵니다.
+    const orders = await db.collection('orders').find({}).sort({ requestedAt: -1 }).toArray();
+
+    const tableNum = await db.collection('tables').countDocuments();
+
+    res.render('admin/orders', { orders, tableNum, pageTitle: '주문내역' });
+  });
+
+  // --- 카테고리 setting --- //
   // (2) 카테고리 생성
   router.post('/category', async (req, res) => {
     const { name, manufacturing } = req.body;
@@ -198,122 +341,5 @@ module.exports = (io) => {
     res.send('순서가 저장되었습니다.');
   });
 
-  // /admin/server
-  router.get('/server', async (요청, 응답) => {
-    try {
-      // 미결제 주문 (송금확인 탭)
-      const unpaidOrders = await db.collection('orders').find({ paid: false }).sort({ requestedAt: 1 }).toArray();
-
-      // 결제 끝 && 서빙 전 주문 (서빙 탭)
-      const serveOrdersRaw = await db.collection('orders').find({ paid: true, served: false }).sort({ completedAt: 1 }).toArray();
-
-      // 2) 모든 메뉴 가져와서 manufacturing 맵 생성
-      const allMenus = await db.collection('menus').find().toArray();
-      const manuMap = allMenus.reduce((m, x) => {
-        m[x._id.toString()] = x.manufacturing;
-        return m;
-      }, {});
-
-      // 3) 주문 아이템마다 manufacturing 필드 붙여주기
-      const serveOrders = serveOrdersRaw.map((o) => ({
-        ...o,
-        items: o.items.map((i) => ({
-          ...i,
-          manufacturing: manuMap[i.menuId.toString()] || false,
-        })),
-      }));
-
-      const tableNum = await db.collection('tables').countDocuments();
-
-      응답.render('admin/server', { unpaidOrders, serveOrders, tableNum, pageTitle: '서버' });
-    } catch (err) {
-      console.error('🚨 /admin/server 조회 중 오류:', err);
-      res.status(500).send('서버 오류');
-    }
-  });
-
-  // 송금 확인 처리
-  router.post('/server/confirm', async (요청, 응답) => {
-    const id = new ObjectId(요청.query.id);
-    await db.collection('orders').updateOne({ _id: id }, { $set: { paid: true, confirmedAt: new Date() } });
-    // 고객 confirm 페이지 알림
-    io.to(요청.query.id).emit('orderConfirmed');
-
-    // 서빙 탭 실시간 업데이트용으로, 모든 관리자 클라이언트에 새 결제 완료 주문 푸시
-    const paidOrder = await db.collection('orders').findOne({ _id: id });
-    io.emit('orderPaid', paidOrder);
-
-    응답.send('송금확인이 완료되었습니다.');
-  });
-
-  // 주문 취소 처리
-  router.post('/server/delete', async (요청, 응답) => {
-    const id = new ObjectId(요청.query.id);
-    await db.collection('orders').deleteOne({ _id: id });
-    응답.send('주문이 삭제되었습니다.');
-  });
-
-  // 서빙 완료 API (변경 없음)
-  router.post('/server/serve-order', async (req, res) => {
-    const { orderId } = req.body;
-    await db.collection('orders').updateOne({ _id: new ObjectId(orderId) }, { $set: { served: true, servedAt: new Date() } });
-    io.to(orderId).emit('orderServed', orderId);
-    res.sendStatus(200);
-  });
-
-  // — 주방 페이지 —
-  router.get('/kitchen', async (req, res) => {
-    const orders = await db
-      .collection('orders')
-      .find({ paid: true, completed: false }) // 아직 요리 완료되지 않은 주문
-      .toArray();
-
-    // 제조 음식만 필터링
-    const menus = await db.collection('menus').find({ manufacturing: true }).toArray();
-    const manuIds = menus.map((m) => m._id.toString());
-    const kitchenOrders = orders
-      .map((o) => ({
-        ...o,
-        items: o.items.filter((i) => manuIds.includes(i.menuId.toString())),
-      }))
-      .filter((o) => o.items.length);
-    res.render('admin/kitchen', { kitchenOrders, pageTitle: '주방' });
-  });
-
-  // 개별 메뉴 “요리됨” 체크 API
-  router.post('/kitchen/item-cooked', async (req, res) => {
-    const { orderId, menuId } = req.body;
-    await db
-      .collection('orders')
-      .updateOne({ _id: new ObjectId(orderId), 'items.menuId': new ObjectId(menuId) }, { $set: { 'items.$.cooked': true } });
-    io.to(orderId).emit('itemCooked', { orderId, menuId });
-    res.sendStatus(200);
-  });
-
-  router.post('/kitchen/item-uncook', async (req, res) => {
-    const { orderId, menuId } = req.body;
-    try {
-      // 해당 메뉴의 cooked를 false로 되돌림
-      await db
-        .collection('orders')
-        .updateOne({ _id: new ObjectId(orderId), 'items.menuId': new ObjectId(menuId) }, { $set: { 'items.$.cooked': false } });
-      // 실시간으로 서버 페이지에 알림
-      io.to(orderId).emit('itemUncooked', { orderId, menuId });
-      return res.sendStatus(200);
-    } catch (err) {
-      console.error('❌ item-uncook 실패:', err);
-      return res.status(500).send('서버 오류');
-    }
-  });
-
-  // 전체 요리 완료(버튼) API
-  router.post('/kitchen/complete-order', async (req, res) => {
-    const { orderId } = req.body;
-    await db
-      .collection('orders')
-      .updateOne({ _id: new ObjectId(orderId) }, { $set: { completed: true, completedAt: new Date(), 'items.$[].cooked': true } });
-    io.to(orderId).emit('orderCooked', orderId);
-    res.sendStatus(200);
-  });
   return router;
 };

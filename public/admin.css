@@ -1,8 +1,18 @@
 @font-face {
-  font-family: 'Pretendard-Regular';
-  src: url('https://fastly.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff') format('woff');
+  font-family: 'Pretendard';
   font-style: normal;
   font-weight: 400;
+  font-display: swap;
+  src: local('Pretendard Regular'), local('Pretendard-Regular'), url('/fonts/Pretendard-Regular.woff2') format('woff2'),
+    url('/fonts/Pretendard-Regular.woff') format('woff'), url('/fonts/Pretendard-Regular.ttf') format('truetype');
+}
+
+/* 전역 폰트 설정 */
+body,
+input,
+button,
+textarea {
+  font-family: 'Pretendard', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 * {
@@ -13,16 +23,31 @@ body {
   margin: 0;
 }
 
+ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 18px 0;
+}
+a {
+  text-decoration: none;
+  color: #222;
+}
+
 .home-page,
-.server-page,
 .kitchen-page,
 .menu-page {
   background: #fff;
   padding: 20px 16px;
 }
 
-.menu-page {
-  padding: 0 16px;
+.menu-page,
+.server-page,
+.orders-page {
+  padding: 0 16px 20px;
+}
+
+.order-section + .order-section {
+  margin-top: 16px;
 }
 
 .topbar {
@@ -34,8 +59,8 @@ body {
   background: #fff;
   padding: 0 16px;
   font-weight: 600;
-  /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); */
   z-index: 1001;
+  padding-top: env(safe-area-inset-top);
 }
 
 #nav-bars {
@@ -45,7 +70,7 @@ body {
 
 .page-title {
   margin-left: 12px;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
 }
 
@@ -71,7 +96,6 @@ body {
   padding: 12px 16px;
   font-size: 16px;
   color: #ecf0f1;
-  text-decoration: none;
 }
 
 .sidebar a:hover {
@@ -79,37 +103,118 @@ body {
 }
 
 .table-filter {
-  margin: 12px 0;
-}
-
-.filter-btn {
-  display: inline-block;
-  padding: 6px 12px;
-  margin-right: 6px;
-  border: 1px solid #123;
+  display: flex;
+  gap: 14px;
+  background: #fff;
   border-radius: 4px;
-  background: #1f556f;
-  color: #fff;
+  margin: 24px 0;
+}
+.table-filter .filter-btn {
+  margin: 0;
+  padding: 6px 16px;
+  background: #f2f2f2;
+  color: #333;
+  border: none;
+  border-radius: 2px; /* 사각형 모서리 */
   cursor: pointer;
+  transition: background 0.2s;
+  font-size: 16px;
 }
-
-.filter-btn.active {
-  background: #123;
-}
-
-.order-card {
-  background: #1f556f;
+.table-filter .filter-btn.active {
+  background: #222;
   color: #fff;
-  border-radius: 6px;
-  padding: 12px;
-  margin-bottom: 12px;
+}
+
+.order-header,
+.paid-order-footer,
+.order-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.serve-order-footer,
+.kitchen-order-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .order-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 14px;
   margin-bottom: 8px;
+}
+.order-items {
+  margin-bottom: 8px;
+}
+.order-total {
+  font-weight: 600;
+}
+
+.order-items li {
+  margin: 20px 0;
+}
+.order-items label {
+  font-size: 16px;
+}
+
+/* — 서버 페이지: 버튼 공통 스타일 */
+.server-page .order-card .btn-delete,
+.server-page .order-card .btn-confirm-payment,
+.btn-serve-complete,
+.complete-order-btn {
+  padding: 4px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+/* 삭제 버튼 (btn-delete) */
+.server-page .order-card .btn-delete {
+  background: none;
+  color: #e74c3c;
+  font-size: 14px;
+  padding: 0;
+  text-decoration-line: underline;
+}
+
+/* 송금 확인 버튼 (btn-confirm-payment) */
+.server-page .order-card .btn-confirm-payment,
+.btn-serve-complete,
+.complete-order-btn {
+  background: #007bff;
+  box-shadow: 0 4px 0 #0069da;
+  color: #fff;
+}
+.btn-serve-complete {
+  display: block;
+}
+
+/* 서버 페이지: 체크박스 크게 */
+.server-page .serve-checkbox,
+.kitchen-page .cook-checkbox {
+  /* 1. 체크박스 크기 조정 */
+  transform: scale(1.5); /* 1.5배 확대 */
+  transform-origin: left; /* 위치 기준점 조정 (필요시) */
+
+  /* 2. 체크박스-라벨 간격 조정 */
+  margin-right: 8px; /* 체크박스 오른쪽 여백 */
+  /* 3. (선택) 체크 색상 변경 */
+  accent-color: #222; /* Chrome, Edge, Safari 지원 */
+}
+
+/* 기본 텍스트 스타일 */
+.order-items .item-text {
+  color: #333;
+  transition: color 0.2s, text-decoration 0.2s;
+}
+
+/* 체크되면 회색 + 취소선 */
+.order-items input[type='checkbox']:checked + .item-text {
+  color: #999;
+  text-decoration: line-through;
 }
 
 .order-items label {
@@ -119,10 +224,47 @@ body {
   margin-bottom: 4px;
 }
 
+/* 서버 페이지: 상단 탭 (송금확인, 서빙) */
+.server-tabs {
+  display: flex;
+  gap: 24px; /* 버튼 사이 여유 */
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.server-tabs button {
+  flex: none;
+  background: none;
+  border: none;
+  padding: 12px 0; /* 위아래 여백만 */
+  font-size: 18px;
+  font-weight: 600;
+  color: #737373;
+  cursor: pointer;
+  position: relative; /* ::after 위치 기준 */
+  transition: color 0.2s;
+}
+/* active 상태 텍스트 색 변경 */
+.server-tabs button.active {
+  color: #272727;
+}
+
+/* active 상태일 때 하단 언더라인 */
+.server-tabs button.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px; /* border-bottom 두께만큼 살짝 내려줌 */
+  width: 100%;
+  height: 2px; /* 언더라인 두께 */
+  background: #272727;
+}
+
 .item-checkbox {
   width: 16px;
   height: 16px;
-  accent-color: #ff9900;
+  accent-color: #007bff;
 }
 
 .btn-serve-order {
@@ -139,11 +281,7 @@ body {
   cursor: not-allowed;
 }
 
-.hidden {
-  display: none;
-}
-
-.notice-bar {
+.inline-action {
   position: sticky;
   top: 0;
   width: 100%;
@@ -156,18 +294,21 @@ body {
   z-index: 999;
 }
 
-.notice-bar p {
+.inline-action p {
   padding: 40px;
+  color: #888;
 }
 
 .menu-cards,
-.cards-wrapper {
+.cards-wrapper,
+.order-list {
   display: grid;
-  gap: 12px;
+  gap: 18px;
   grid-template-columns: 1fr;
 }
 
-.menu-card {
+.menu-card,
+.order-card {
   position: relative;
   background: #fff;
   border-radius: 8px;
@@ -187,11 +328,11 @@ body {
 }
 
 .menu-card h2 {
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .menu-card h3 {
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .menu-card p {
@@ -222,23 +363,64 @@ body {
   color: red;
 }
 
-.delete-form {
-  position: absolute;
-  top: 16px;
-  right: 16px;
+.order-card .table-num,
+.order-card .order-total {
+  font-size: 20px;
+  font-weight: 700;
 }
 
+.order-card .time {
+  font-size: 14px;
+  color: #737373;
+  padding: 0 5px;
+}
+
+.order-card .items-list {
+  font-size: 15px;
+  margin: 18px 0;
+}
+/* 주문 내역 */
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5em 0;
+}
+.orders-page .order-footer {
+  border-top: 1px solid #eee;
+  padding-top: 8px;
+}
+.orders-page .order-footer span {
+  font-size: 16px;
+  font-weight: 700;
+}
+/* 메뉴 편집 */
+
+/* ----- 헤더 영역 스타일 ----- */
+.edit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px; /* 제목과 폼 사이 간격 */
+}
+
+.edit-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* 휴지통 버튼 (기존 delete-icon) 위치 조정 불필요, 
+   .edit-header flex로 자동 오른쪽 정렬 */
 .delete-icon {
   padding: 4px;
   border: none;
   background: transparent;
-  font-size: 24px;
-  color: #e74c3c;
+  font-size: 18px; /* 필요 시 조정 */
+  color: #2b2b2b;
   cursor: pointer;
 }
-
 .delete-icon:hover {
-  color: #c0392b;
+  color: #484848;
 }
 
 .menu-card.new-card {
@@ -264,12 +446,12 @@ body {
 .edit-page form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .edit-page label {
-  margin-top: 10px;
-  font-weight: 600;
+  margin-top: 16px;
+  font-weight: 700;
 }
 
 .edit-page input,
@@ -281,21 +463,28 @@ body {
   border-radius: 6px;
 }
 
-.edit-page button {
+.save-btn,
+.add-btn {
+  margin-top: 20px;
   padding: 10px;
   border: none;
   border-radius: 6px;
-  background: #4a90e2;
+  background: #007bff;
   color: #fff;
   cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
 }
 
-.edit-page .cancel-btn {
-  display: block;
-  margin-top: 8px;
-  text-align: center;
+.cancel-btn {
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  background: #eee;
   color: #777;
-  text-decoration: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .category-tabs {
@@ -320,6 +509,7 @@ body {
   background: #f2f2f2;
   color: #737373;
   font-weight: 600;
+  font-size: 16px;
   cursor: pointer;
   transition: background 0.3s;
   white-space: nowrap;
@@ -337,7 +527,8 @@ body {
 
 .category-title {
   margin-bottom: 12px;
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .fab {
@@ -372,4 +563,28 @@ body {
 
 .fab:focus {
   outline: none;
+}
+
+.toast-msg {
+  position: fixed;
+  bottom: 65px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(50, 50, 50, 0.9);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease-in-out;
+  z-index: 9999;
+}
+
+.toast-msg.show {
+  opacity: 1;
+}
+
+.hidden {
+  display: none;
 }

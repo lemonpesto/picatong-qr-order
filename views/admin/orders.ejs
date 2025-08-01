@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>주문 내역</title>
+    <link rel="stylesheet" href="/admin.css" />
+    <script src="https://kit.fontawesome.com/a3ff865f92.js" crossorigin="anonymous"></script>
+  </head>
+  <body>
+    <%- include('./partial/sidebar') %>
+
+    <div class="orders-page">
+      <!-- 기존 server-tabs 재활용 -->
+      <div class="table-filter">
+        <button class="filter-btn active" data-table="all">전체</button>
+        <% for (let i = 1; i <= tableNum; i++) { %>
+        <button class="filter-btn" data-table="<%= i %>">T<%= i %></button>
+        <% } %>
+      </div>
+
+      <div class="order-list">
+        <% orders.forEach(order => { %>
+        <div class="order-card" data-table="<%= order.tableNum %>" data-id="<%= order._id %>">
+          <div class="order-header">
+            <div class="left-header">
+              <span class="table-num">T<%= order.tableNum %></span>
+              <span class="time">
+                <%= new Date(order.requestedAt) .toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) %>
+              </span>
+            </div>
+          </div>
+
+          <div class="order-items">
+            <% order.items.forEach(item => { %>
+            <div class="order-item">
+              <span class="item-name"> <%= item.menuName %> x<%= item.qty %> </span>
+              <span class="item-price"> <%= (item.price * item.qty).toLocaleString() %>원 </span>
+            </div>
+            <% }) %>
+          </div>
+
+          <div class="order-footer">
+            <span>합계</span>
+            <span class="order-total"> <%= order.total.toLocaleString() %>원 </span>
+          </div>
+        </div>
+        <% }) %>
+
+        <div id="orders-notice" class="inline-action <%= orders.length > 0 ? 'hidden' : '' %>">
+          <p>주문 내역이 없습니다</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast-msg"></div>
+    <script src="/toast.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      (function () {
+        const socket = io();
+        const filterBtns = '.filter-btn';
+        const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+        const orderList = document.querySelector('.order-list');
+        const notice = document.getElementById('orders-notice');
+
+        // --- 테이블 필터링 ---
+        $$(filterBtns).forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const table = btn.dataset.table;
+            if (table === 'all') {
+              $$(filterBtns).forEach((b) => b.classList.remove('active'));
+              btn.classList.add('active');
+            } else {
+              document.querySelector('[data-table="all"]').classList.remove('active');
+              btn.classList.toggle('active');
+            }
+            const activeTables = new Set(
+              $$(filterBtns)
+                .filter((b) => b.classList.contains('active'))
+                .map((b) => b.dataset.table)
+                .filter((t) => t !== 'all')
+            );
+            $$('.order-card').forEach((card) => {
+              card.style.display = activeTables.size === 0 || activeTables.has(card.dataset.table) ? '' : 'none';
+            });
+          });
+        });
+
+        // --- 새 주문 알림 (실시간 반영) ---
+        socket.on('newOrder', (order) => {
+          // “주문 내역이 없습니다” 숨기기
+          notice.classList.add('hidden');
+
+          // 카드 생성 후 상단에 추가
+          const card = createOrderCard(order);
+          orderList.prepend(card);
+        });
+
+        // 주문 카드 생성 함수
+        function createOrderCard(o) {
+          const c = document.createElement('div');
+          c.className = 'order-card';
+          c.dataset.table = o.tableNum;
+          c.dataset.id = o._id;
+          c.innerHTML = `
+            <div class="order-header">
+              <div class="left-header">
+                <span class="table-num">T${o.tableNum}</span>
+                <span class="time">${new Date(o.requestedAt).toLocaleTimeString('ko-KR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                })}</span>
+              </div>
+            </div>
+            <div class="order-items">
+              ${o.items
+                .map(
+                  (item) => `
+                <div class="order-item">
+                  <span class="item-name">
+                    ${item.menuName} x${item.qty}
+                  </span>
+                  <span class="item-price">
+                    ${(item.price * item.qty).toLocaleString()}원
+                  </span>
+                </div>
+              `
+                )
+                .join('')}
+            </div>
+            <div class="order-footer">
+              <span>합계</span>
+              <span class="order-total">
+                ${o.total.toLocaleString()}원
+              </span>
+            </div>`;
+          return c;
+        }
+      })();
+    </script>
+  </body>
+</html>

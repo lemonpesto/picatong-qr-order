@@ -1,5 +1,19 @@
-<div class="nav">
-  <a class="logo">피카통</a>
-  <a>T1</a>
-  <a href="/orders/history" class="orders-history">주문내역</a>
-</div>
+<nav class="nav">
+  <% if (typeof navBack !== 'undefined') { %>
+  <div class="nav-left">
+    <a href="<%= navBack %>" class="logo back-link">
+      <i class="fa-solid fa-chevron-left"></i>
+    </a>
+    <span class="nav-title"><%= navTitle %></span>
+  </div>
+  <%} else if (typeof navTitle !== 'undefined') { %>
+  <span class="nav-title"><%= navTitle %></span>
+  <% } else { %>
+  <a href="/menu" class="logo">피카통</a>
+  <% } %>
+
+  <div class="nav-right">
+    <span class="table-label">T<%= tableNum %></span>
+    <a href="/orders/history">주문내역</a>
+  </div>
+</nav>

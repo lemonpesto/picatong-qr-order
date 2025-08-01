@@ -10,7 +10,7 @@
   <body>
     <%- include('./partial/sidebar') %>
     <div class="edit-page">
-      <h3><%= "메뉴 추가" %></h3>
+      <h3>메뉴 추가</h3>
       <form action="/admin/menu" method="POST">
         <label>메뉴명</label>
         <input name="name" value="" placeholder="예: 감자튀김" required />
@@ -34,12 +34,11 @@
           <option value="false">품절</option>
         </select>
 
-        <button type="submit">등록</button>
-        <a href="/admin/menu" class="cancel-btn">취소</a>
+        <!-- 1) 저장(추가) -->
+        <button type="submit" class="add-btn">추가</button>
+        <!-- 2) 취소: validation 없이 /admin/menu 로 이동 -->
+        <button type="button" class="cancel-btn" onclick="location.href='/admin/menu'">취소</button>
       </form>
     </div>
-    <script>
-      
-    </script>
   </body>
 </html>

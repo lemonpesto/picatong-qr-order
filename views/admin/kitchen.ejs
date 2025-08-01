@@ -14,82 +14,99 @@
 
     <div class="kitchen-page">
       <!-- <h1>주방 페이지</h1> -->
+      <div class="order-list">
+        <% kitchenOrders.forEach(order => { %>
+        <div class="order-card" data-order-id="<%= order._id %>">
+          <div class="order-header">
+            <div class="left-header">
+              <span class="table-num">T<%= order.tableNum %></span>
+              <span class="time"
+                ><%= new Date(order.requestedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) %></span
+              >
+            </div>
+          </div>
+          <div class="order-items">
+            <ul>
+              <% order.items.forEach(item => { %>
+              <li data-menu-id="<%= item.menuId %>">
+                <label>
+                  <input type="checkbox" class="cook-checkbox" <%= item.cooked ? 'checked' : '' %> />
+                  <span class="item-text"><%= item.menuName %> x<%= item.qty %> </span>
+                </label>
+              </li>
+              <% }) %>
+            </ul>
+          </div>
+          <div class="kitchen-order-footer">
+            <button type="submit" class="complete-order-btn">요리완성</button>
+          </div>
+        </div>
 
-      <% kitchenOrders.forEach(order => { %>
-      <div class="order-card" data-order-id="<%= order._id %>">
-        <h2><%= order._id %>｜테이블<%= order.tableNum %></h2>
-        <p><%= new Date(order.requestedAt).toLocaleString() %></p>
-        <ul>
-          <% order.items.forEach(item => { %>
-          <li data-menu-id="<%= item.menuId %>">
-            <label> <input type="checkbox" class="cook-checkbox" <%= item.cooked ? 'checked' : '' %> /> <%= item.menuName %> x<%= item.qty %> </label>
-          </li>
-          <% }) %>
-        </ul>
-        <button class="complete-order-btn">요리완료</button>
-      </div>
-      <% }) %>
-      <div class="notice-bar <%= kitchenOrders.length > 0 ? 'hidden' : '' %>">
-        <p>주문이 없습니다</p>
+        <% }) %>
+        <div id="kitchen-notice" class="inline-action <%= kitchenOrders.length > 0 ? 'hidden' : '' %>">
+          <p>주문이 없습니다</p>
+        </div>
       </div>
     </div>
+    <div id="toast" class="toast-msg"></div>
+    <script src="/toast.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
       document.addEventListener('DOMContentLoaded', () => {
         const socket = io();
         const container = document.querySelector('.kitchen-page');
-        const notice = document.querySelector('.notice-bar');
+        const notice = document.getElementById('kitchen-notice');
 
-        function updateNotice() {
-          const hasOrder = !!document.querySelector('.order-card');
-          notice.classList.toggle('hidden', hasOrder);
-        }
-
-        // 카드에 소켓 방 참가 및 이벤트 바인딩
-        function bindCard(card, orderId) {
-          // join room
-          socket.emit('joinOrderRoom', orderId);
-
-          // 개별 조리 체크박스
-          card.querySelectorAll('.cook-checkbox').forEach((chk) => {
-            chk.addEventListener('change', async (e) => {
-              const menuId = e.target.closest('li').dataset.menuId;
-              const url = e.target.checked ? '/admin/kitchen/item-cooked' : '/admin/kitchen/item-uncook';
-              await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ orderId, menuId }),
-              });
-            });
+        // ── 헬퍼 ──
+        const postJSON = (url, data) =>
+          fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
           });
 
-          // 요리완료 버튼
-          const btn = card.querySelector('.complete-order-btn');
-          btn.addEventListener('click', async () => {
-            // 모두 체크 표시
+        // ── 공지 토글 ──
+        function updateNotice() {
+          const count = container.querySelectorAll('.order-card').length;
+          // 주문이 하나라도 있으면 숨기고, 없으면 보이게
+          if (count > 0) notice.classList.add('hidden');
+          else notice.classList.remove('hidden');
+          // notice.classList.toggle('hidden', count > 0);
+        }
+
+        // ── 카드 바인딩 ──
+        function bindCard(card) {
+          const orderId = card.dataset.orderId;
+          // 1) 방 참가
+          socket.emit('joinOrderRoom', orderId);
+
+          // 2) 체크박스 이벤트
+          card.addEventListener('change', (e) => {
+            if (!e.target.matches('.cook-checkbox')) return;
+            const menuId = e.target.closest('li').dataset.menuId;
+            const url = e.target.checked ? '/admin/kitchen/item-cooked' : '/admin/kitchen/item-uncook';
+            postJSON(url, { orderId, menuId });
+          });
+
+          // 3) 요리완성 버튼
+          card.querySelector('.complete-order-btn').addEventListener('click', async () => {
             card.querySelectorAll('.cook-checkbox').forEach((c) => (c.checked = true));
-            await fetch('/admin/kitchen/complete-order', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ orderId }),
-            });
+            const res = await postJSON('/admin/kitchen/complete-order', { orderId });
+            const msg = await res.text();
+            showToast(msg);
             card.remove();
             updateNotice();
           });
         }
 
-        // 1) 초기 카드 바인딩
-        socket.on('connect', () => {
-          document.querySelectorAll('.order-card').forEach((card) => {
-            const orderId = card.dataset.orderId;
-            bindCard(card, orderId);
-          });
-          updateNotice();
-        });
+        // ── 초기 바인딩 & 공지 ──
+        container.querySelectorAll('.order-card').forEach(bindCard);
+        updateNotice();
 
-        // 2) 새 결제 완료 주문 추가
+        // ── Socket 이벤트 ──
+
+        // 1) 결제 확인(주방 대상) 주문
         socket.on('orderPaid', (order) => {
-          // 제조 메뉴만 필터
           const items = order.items.filter((i) => i.manufacturing);
           if (!items.length) return;
 
@@ -97,47 +114,65 @@
           card.className = 'order-card';
           card.dataset.orderId = order._id;
           card.innerHTML = `
-      <h2>${order._id}｜테이블${order.tableNum}</h2>
-      <p>${new Date(order.requestedAt).toLocaleString()}</p>
-      <ul>
-        ${items
-          .map(
-            (item) => `
-          <li data-menu-id="${item.menuId}">
-            <label>
-              <input type="checkbox" class="cook-checkbox" />
-              ${item.menuName} x${item.qty}
-            </label>
-          </li>`
-          )
-          .join('')}
-      </ul>
-      <button class="complete-order-btn">요리완료</button>
-    `;
+            <div class="order-header">
+              <div class="left-header">
+                <span class="table-num">T${order.tableNum}</span>
+                <span class="time">${new Date(order.requestedAt).toLocaleTimeString('ko-KR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                })}</span>
+                
+              </div>
+            </div>
+            <div class="order-items">
+              <ul>
+                ${items
+                  .map(
+                    (i) =>
+                      `<li data-menu-id="${i.menuId}">
+                    <label>
+                      <input type="checkbox" class="cook-checkbox" />
+                      <span class="item-text">${i.menuName} x${i.qty}</span>
+                    </label>
+                  </li>`
+                  )
+                  .join('')}
+              </ul>
+            </div>
+            <div class="kitchen-order-footer">
+              <button class="complete-order-btn">요리완성</button>
+            </div>
+          `;
           container.appendChild(card);
-          bindCard(card, order._id);
+          bindCard(card);
           updateNotice();
         });
 
-        // 3) 개별 메뉴 조리 완료/취소 반영
+        // 2) 개별 메뉴 조리 토글
         socket.on('itemCooked', ({ orderId, menuId }) => {
-          const card = document.querySelector(`.order-card[data-order-id="${orderId}"]`);
-          const chk = card?.querySelector(`li[data-menu-id="${menuId}"] .cook-checkbox`);
+          const chk = container.querySelector(`.order-card[data-order-id="${orderId}"] li[data-menu-id="${menuId}"] .cook-checkbox`);
           if (chk) chk.checked = true;
         });
         socket.on('itemUncooked', ({ orderId, menuId }) => {
-          const card = document.querySelector(`.order-card[data-order-id="${orderId}"]`);
-          const chk = card?.querySelector(`li[data-menu-id="${menuId}"] .cook-checkbox`);
+          const chk = container.querySelector(`.order-card[data-order-id="${orderId}"] li[data-menu-id="${menuId}"] .cook-checkbox`);
           if (chk) chk.checked = false;
         });
 
-        // 4) 전체 요리 완료 반영 (다른 창에서)
+        // 3) 전체 주문 완료(카드 제거)
         socket.on('orderCooked', (orderId) => {
-          const card = document.querySelector(`.order-card[data-order-id="${orderId}"]`);
+          const card = container.querySelector(`.order-card[data-order-id="${orderId}"]`);
           if (card) {
             card.remove();
             updateNotice();
           }
+        });
+
+        // 4) 재접속 시 기존 카드들도 방에 다시 참가
+        socket.on('connect', () => {
+          container.querySelectorAll('.order-card').forEach((card) => {
+            socket.emit('joinOrderRoom', card.dataset.orderId);
+          });
         });
       });
     </script>

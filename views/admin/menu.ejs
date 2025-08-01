@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>메뉴 관리</title>
+    <title>피카통 오더</title>
     <link rel="stylesheet" href="/admin.css" />
     <script src="https://kit.fontawesome.com/a3ff865f92.js" crossorigin="anonymous"></script>
     <!-- Sortable.js 로 드래그 앤 드롭 순서 변경 -->
@@ -47,6 +47,7 @@
       <button class="fab"><i class="fa-solid fa-plus"></i></button>
     </form>
 
+    <script src="/toast.js"></script>
     <script>
       const categoryBar = document.querySelector('.category-tabs');
       const buttons = document.querySelectorAll('.tab-btn');
@@ -67,7 +68,7 @@
           const targetSection = document.getElementById(targetId);
           if (!targetSection) return;
 
-          const yOffset = -categoryBar.offsetHeight;
+          const yOffset = -categoryBar.offsetHeight - 50; // navBar 50px
           const y = targetSection.getBoundingClientRect().top + window.pageYOffset + yOffset;
 
           // 플래그 올리고, 이전 타이머 지운 뒤 스크롤
@@ -109,7 +110,10 @@
           const id = btn.dataset.id;
           const res = await fetch(`/admin/menu/${id}`, { method: 'DELETE' });
           if (res.ok) btn.closest('.menu-card').remove();
-          else alert(await res.text());
+          else {
+            const msg = await res.text();
+            showToast(msg);
+          }
         });
       });
     </script>

@@ -19,12 +19,11 @@ async function updateInfo() {
     }
     const data = await res.json();
     // 안전하게 기본값 설정
-    const total = (typeof data.total === 'number' ? data.total : 0);
-    const count = (typeof data.count === 'number' ? data.count : 0);
-
+    const total = typeof data.total === 'number' ? data.total : 0;
+    const count = typeof data.count === 'number' ? data.count : 0;
 
     // 빈 장바구니 섹션
-    const noticeSection = document.querySelector('.notice-bar');
+    const noticeSection = document.querySelector('.inline-action');
 
     // 채워진 장바구니 섹션
     const cartSection = document.querySelector('.cart-section');
@@ -56,7 +55,7 @@ updateInfo();
 console.log('✅ cart.js 로딩됨');
 
 // 메뉴별 수량 조정
-document.querySelectorAll('.list-box').forEach((item) => {
+document.querySelectorAll('.item-box').forEach((item) => {
   const minusBtn = item.querySelector('.minus');
   const plusBtn = item.querySelector('.plus');
   const trashIcon = minusBtn.querySelector('.fa-trash-can');

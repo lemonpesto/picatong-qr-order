@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const targetSection = document.getElementById(targetId);
       if (!targetSection) return;
 
-      const yOffset = -categoryBar.offsetHeight;
+      const yOffset = -categoryBar.offsetHeight - 50;
       const y = targetSection.getBoundingClientRect().top + window.pageYOffset + yOffset;
 
       // 플래그 올리고, 이전 타이머 지운 뒤 스크롤

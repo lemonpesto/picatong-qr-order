@@ -124,8 +124,9 @@ app.get('/login', async (요청, 응답, next) => {
 
 function checkLogin(요청, 응답, next) {
   if (!요청.user) {
-    return 응답.send('다시 QR을 찍어주세요.');
+    return 응답.send('QR을 다시 찍어주세요.');
   }
+  응답.locals.tableNum = 요청.user.tableNum;
   next();
 }
 app.use(checkLogin);
@@ -137,8 +138,8 @@ app.use(checkLogin);
 
 app.get('/menu', async (요청, 응답) => {
   try {
-    let menus = await db.collection('menus').find().toArray();
-    let categories = await db.collection('categories').find().sort({ order: 1 }).toArray();
+    const menus = await db.collection('menus').find().toArray();
+    const categories = await db.collection('categories').find().sort({ order: 1 }).toArray();
     응답.render('menu.ejs', { menus, categories });
   } catch (e) {
     console.error(e);
@@ -148,21 +149,24 @@ app.get('/menu', async (요청, 응답) => {
 
 // 메뉴 페이지
 app.post('/cart/add', async (요청, 응답) => {
-  const tableId = 요청.user._id; // 세션에서 tableId 추출
-  const menuId = 요청.query.menuid;
+  const tableId = 요청.user._id;
+  const menuId = new ObjectId(요청.query.menuid);
   const { name, price, qty } = 요청.body;
 
-  let result = await db.collection('cart').findOne({ tableId: tableId, menuId: new ObjectId(menuId) });
-  if (result) {
+  const item = await db.collection('cart').findOne({ tableId: tableId, menuId: new ObjectId(menuId) });
+  const menu = await db.collection('menus').findOne({ _id: menuId });
+
+  if (item) {
     // 이미 담은 메뉴라면
-    let totalQty = result['qty'] + parseInt(qty);
+    let totalQty = item['qty'] + parseInt(qty);
     await db.collection('cart').updateOne({ tableId: tableId, menuId: new ObjectId(menuId) }, { $set: { qty: totalQty } });
   } else {
     await db.collection('cart').insertOne({
-      tableId: new ObjectId(tableId),
-      menuId: new ObjectId(menuId),
+      tableId: tableId,
+      menuId: menuId,
       menuName: name,
       price: parseInt(price),
+      manufacturing: menu.manufacturing,
       qty: parseInt(qty),
     });
   }
@@ -195,7 +199,7 @@ app.get('/cart', async (요청, 응답) => {
       .collection('cart')
       .find({ tableId: new ObjectId(tableId) })
       .toArray();
-    응답.render('cart.ejs', { menus: result });
+    응답.render('cart.ejs', { menus: result, navTitle: '장바구니', navBack: '/menu' });
   } catch (e) {
     console.error(e);
     응답.status(500).send('서버 오류');
@@ -255,7 +259,7 @@ app.get('/payment', async (요청, 응답) => {
 
     const total = cartItems.reduce((sum, item) => sum + item.price * item.qty, 0);
 
-    응답.render('payment.ejs', { total });
+    응답.render('payment.ejs', { total, navTitle: '결제', navBack: '/cart' });
   } catch (err) {
     console.error('💥 결제 페이지 오류:', err);
     응답.status(500).send('결제 페이지를 불러오지 못했습니다.');
@@ -281,7 +285,7 @@ app.post('/payment/confirm', async (요청, 응답) => {
         menuId: item.menuId,
         menuName: item.menuName,
         price: item.price,
-        manufacturing: item.menufacturing,
+        manufacturing: item.manufacturing,
         qty: item.qty,
         cooked: false,
       })),
@@ -295,7 +299,7 @@ app.post('/payment/confirm', async (요청, 응답) => {
       // 시간 정보
       requestedAt: new Date(), // 유저가 "송금했습니다" 버튼을 누른 시각
       confirmedAt: null, // 서버가 송금 확인을 누른 시각
-      completedAt: null, // 주방에서 요리 완료 누른 시각
+      completedAt: null, // 주방에서 요리완성 누른 시각
       servedAt: null, // 서버가 서빙 완료 누른 시각
     };
 
@@ -304,10 +308,11 @@ app.post('/payment/confirm', async (요청, 응답) => {
     const orderId = result.insertedId.toString();
 
     // orderDoc 에 _id와 requestedAt 등을 포함해 보냅니다.
+    console.log('▶️ Emitting newOrder for', orderId);
     io.emit('newOrder', {
       _id: orderId,
       tableNum: orderDoc.tableNum,
-      items: orderDoc.items,
+      items: orderDoc.items, // manufacturing 포함
       total: orderDoc.total,
       requestedAt: orderDoc.requestedAt,
       paid: orderDoc.paid,
@@ -327,22 +332,30 @@ app.post('/payment/confirm', async (요청, 응답) => {
 // 결제 확인 페이지
 app.get('/payment/confirm', async (요청, 응답) => {
   try {
-    응답.render('confirm.ejs');
+    응답.render('confirm.ejs', { navTitle: '결제확인' });
   } catch (err) {
     console.error('💥 /payment/confirm 오류:', err);
     응답.status(500).send('확인 페이지를 불러오는 중 오류가 발생했습니다.');
   }
 });
 
+// server.js
+app.get('/payment/confirm-success', checkLogin, (req, res) => {
+  res.render('confirm-success', { navTitle: '결제확인' });
+});
+
+app.get('/payment/confirm-cancel', checkLogin, (req, res) => {
+  res.render('confirm-cancel', { navTitle: '결제확인' });
+});
+
 // 주문 내역 페이지
 app.get('/orders/history', async (요청, 응답) => {
-  const tableId = 요청.user._id;
+  const tableNum = 요청.user.tableNum;
   try {
-    let result = await db.collection('orders').find({ tableId: new ObjectId(tableId) });
-    console.log(result);
-    응답.render('orders-history.ejs', { orders: result });
+    const orders = await db.collection('orders').find({ tableNum: tableNum }).sort({ requestedAt: -1 }).toArray();
+    응답.render('orders-history', { orders });
   } catch {
-    응답.status(404).send('이상한 url 입력함');
+    응답.status(404).send('주문내역 불러오는 중 에러');
   }
 });
 // ------ 관리자 페이지 ------ //

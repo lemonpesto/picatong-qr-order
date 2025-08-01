@@ -52,17 +52,12 @@ document.getElementById('minus').addEventListener('click', () => {
 });
 
 document.getElementById('add-to-cart').addEventListener('click', async () => {
-  const name = document.getElementById('sheet-name').textContent;
   const qty = document.getElementById('qty').textContent;
   try {
     const res = await fetch('/cart/add?menuid=' + currMenuId, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name,
-        price: currPrice,
-        qty,
-      }),
+      body: JSON.stringify({qty }),
     });
     if (!res.ok) {
       const msg = await res.text();
