@@ -20,16 +20,13 @@ const server = createServer(app);
 const io = new Server(server);
 
 io.on('connection', (socket) => {
-  console.log('새로운 소켓 연결:', socket.id);
   socket.on('joinOrderRoom', (orderId) => {
     socket.join(orderId);
-    console.log(`소켓 ${socket.id} → 주문방 ${orderId} 입장`);
   });
   // ── 메뉴 업데이트(menuUpdated) 로직 ──
   socket.on('menuUpdated', (updatedMenu) => {
     // 모든 손님(관리자 본인 제외)에 브로드캐스트
     socket.broadcast.emit('menuUpdated', updatedMenu);
-    console.log(`메뉴 업데이트 전파:`, updatedMenu);
   });
 });
 
@@ -211,13 +208,7 @@ app.post('/cart/update', async (요청, 응답) => {
   const qty = parseInt(요청.body.qty);
   const tableId = 요청.user._id;
 
-  console.log('🔥 /cart/update 요청 도달'); // 반드시 출력돼야 함
-  console.log('menuId:', menuId);
-  console.log('tableId:', tableId, 'typeof:', typeof tableId);
-  console.log('qty:', qty);
-
   let tmp = await db.collection('cart').findOne({ tableId: tableId });
-  console.log('[Menu ID] actual: ', menuId, 'expected: ', tmp.menuId);
 
   const result = await db.collection('cart').updateOne({ tableId: tableId, menuId: new ObjectId(menuId) }, { $set: { qty: qty } });
 
@@ -231,8 +222,6 @@ app.post('/cart/update', async (요청, 응답) => {
 app.delete('/cart/delete', async (요청, 응답) => {
   const menuId = 요청.query.menuid;
   const tableId = 요청.user._id;
-
-  console.log('[DELETE] menuId:', menuId);
 
   const result = await db.collection('cart').deleteOne({
     tableId: new ObjectId(tableId),
@@ -307,8 +296,6 @@ app.post('/payment/confirm', async (요청, 응답) => {
     const result = await db.collection('orders').insertOne(orderDoc);
     const orderId = result.insertedId.toString();
 
-    // orderDoc 에 _id와 requestedAt 등을 포함해 보냅니다.
-    console.log('▶️ Emitting newOrder for', orderId);
     io.emit('newOrder', {
       _id: orderId,
       tableNum: orderDoc.tableNum,

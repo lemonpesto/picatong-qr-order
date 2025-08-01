@@ -52,10 +52,8 @@ async function updateInfo() {
 // 초기 실행
 updateInfo();
 
-console.log('✅ cart.js 로딩됨');
-
 // 메뉴별 수량 조정
-document.querySelectorAll('.item-box').forEach((item) => {
+document.querySelectorAll('.cart-items').forEach((item) => {
   const minusBtn = item.querySelector('.minus');
   const plusBtn = item.querySelector('.plus');
   const trashIcon = minusBtn.querySelector('.fa-trash-can');
@@ -77,9 +75,7 @@ document.querySelectorAll('.item-box').forEach((item) => {
   }
 
   minusBtn.addEventListener('click', async () => {
-    console.log('🧪 minus 클릭됨', qty); // ✅ 디버깅 로그 추가
     if (qty === 1) {
-      console.log('🗑️ delete 요청 전송 중...'); // ✅
       const res = await fetch('/cart/delete?menuid=' + menuId, { method: 'DELETE', credentials: 'include' });
       const msg = await res.text(); // ✅ 여기서만 text() 사용
       item.style.display = 'none';
@@ -88,7 +84,6 @@ document.querySelectorAll('.item-box').forEach((item) => {
     } else {
       qty--;
       updateUI();
-      console.log('📝 update 요청 전송 중...', qty); // ✅
       const res = await fetch('/cart/update?menuid=' + menuId, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

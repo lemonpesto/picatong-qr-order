@@ -26,7 +26,7 @@
       <label>카테고리</label>
       <select name="category">
         <% categories.forEach(cat => { %>
-          <option value="<%= cat.name %>" <%= menu.category===cat.name?'selected':'' %>>
+          <option value="<%= cat.name %>" <%= menu.category===cat.name?'selected':'' %> >
             <%= cat.name %>
           </option>
         <% }) %>

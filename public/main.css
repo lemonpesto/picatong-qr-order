@@ -262,8 +262,8 @@ a {
   left: 0;
   width: 100%;
   background: white;
-  border-top-left-radius: 20px;
-  border-top-right-radius: 20px;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.15);
   transition: transform 0.3s ease-in-out;
   z-index: 1000;
@@ -319,12 +319,12 @@ a {
 .qty-control {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 16px;
   border: 1px solid #ccc;
   border-radius: 5px;
   padding: 5px;
-  height: 18px;
-  min-width: 64px; /* 수량에 따라 좌우 흔들리지 않게 */
+  height: 24px;
+  min-width: 96px; /* 수량에 따라 좌우 흔들리지 않게 */
   justify-content: center;
 }
 .qty-btn {

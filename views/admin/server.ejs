@@ -153,6 +153,13 @@
           if (e.target.matches('.btn-serve-complete')) handleAction('/admin/server/serve-order', card, 'orderId');
         });
 
+        document.addEventListener('click', (e) => {
+          if (e.target.matches('.btn-serve-complete')) {
+            const id = e.target.closest('.order-card').dataset.id;
+            socket.emit('serveComplete', id);
+          }
+        });
+
         // --- 테이블 필터링 ---
         let selectedTables = new Set();
         $$(filterBtns).forEach((btn) => {
@@ -183,7 +190,6 @@
 
         // --- 실시간 이벤트 수신 & 카드 생성 ---
         socket.on('newOrder', (order) => {
-          console.log('🛎 Received newOrder', order._id);
           paidList.prepend(createPaidCard(order));
           updateNotices();
         });
@@ -225,27 +231,27 @@
           c.dataset.table = o.tableNum;
           c.dataset.id = o._id;
           c.innerHTML = `
-          <div class="order-header">
-            <div class="left-header">
-              <span class="table-num">T${o.tableNum}</span>
-              <span class="time">${new Date(o.requestedAt).toLocaleTimeString('ko-KR', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-              })}</span>
-              
+            <div class="order-header">
+              <div class="left-header">
+                <span class="table-num">T${o.tableNum}</span>
+                <span class="time">${new Date(o.requestedAt).toLocaleTimeString('ko-KR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                })}</span>
+
+              </div>
+              <button class="btn-delete">삭제</button>
             </div>
-            <button class="btn-delete">삭제</button>
-          </div>
-          <div class="order-items">
-            <p class="items-list collapsed">
-              ${o.items.map((i) => `${i.menuName} x${i.qty}`).join(', ')}
-            </p>
-          </div>
-          <div class="paid-order-footer">
-            <span class="order-total">${o.total.toLocaleString()}원</span>
-            <button class="btn-confirm-payment">송금확인</button>
-          </div>`;
+            <div class="order-items">
+              <p class="items-list collapsed">
+                ${o.items.map((i) => `${i.menuName} x${i.qty}`).join(', ')}
+              </p>
+            </div>
+            <div class="paid-order-footer">
+              <span class="order-total">${o.total.toLocaleString()}원</span>
+              <button class="btn-confirm-payment">송금확인</button>
+            </div>`;
           return c;
         }
 
@@ -255,36 +261,36 @@
           c.dataset.table = o.tableNum;
           c.dataset.orderId = o._id;
           c.innerHTML = `
-          <div class="order-header">
-            <div class="left-header">
-            <span class="table-num">T${o.tableNum}</span>
-            <span class="time">${new Date(o.requestedAt).toLocaleTimeString('ko-KR', {
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-            })}</span>
+            <div class="order-header">
+              <div class="left-header">
+              <span class="table-num">T${o.tableNum}</span>
+              <span class="time">${new Date(o.requestedAt).toLocaleTimeString('ko-KR', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+              })}</span>
+              </div>
             </div>
-          </div>
-          <div class="order-items">
-            <ul>
-              ${o.items
-                .map(
-                  (item) => `
-                <li data-menu-id="${item.menuId}">
-                  <label>
-                    <input type="checkbox" class="serve-checkbox"
-                      ${!item.manufacturing ? '' : 'disabled'} />
-                    <span class="item-text">${item.menuName} x${item.qty}</span>
-                  </label>
-                </li>`
-                )
-                .join('')}
-            </ul>
-          </div>
-          <div class="serve-order-footer">
-            <input type="button" class="btn-serve-complete" value="서빙완료"
-              ${o.items.every((i) => !i.manufacturing || i.cooked) ? '' : 'disabled'} />
-          </div>`;
+            <div class="order-items">
+              <ul>
+                ${o.items
+                  .map(
+                    (item) => `
+                  <li data-menu-id="${item.menuId}">
+                    <label>
+                      <input type="checkbox" class="serve-checkbox"
+                        ${!item.manufacturing ? '' : 'disabled'} />
+                      <span class="item-text">${item.menuName} x${item.qty}</span>
+                    </label>
+                  </li>`
+                  )
+                  .join('')}
+              </ul>
+            </div>
+            <div class="serve-order-footer">
+              <input type="button" class="btn-serve-complete" value="서빙완료"
+                ${o.items.every((i) => !i.manufacturing || i.cooked) ? '' : 'disabled'} />
+            </div>`;
           return c;
         }
       })();

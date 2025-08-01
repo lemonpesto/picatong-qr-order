@@ -29,6 +29,12 @@
                 <%= new Date(order.requestedAt) .toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) %>
               </span>
             </div>
+            <div class="right-header">
+              <span class="order-status <%= order.served ? 'status-served' : 'status-pending' %>">
+                <% if (!order.paid) { %> 송금확인 전 <% } else if (!order.completed) { %> 조리 중 <% } else if (!order.served) { %> 서빙 중 <% } else
+                { %> 서빙 완료 <% } %>
+              </span>
+            </div>
           </div>
 
           <div class="order-items">
@@ -63,6 +69,13 @@
         const $$ = (sel) => Array.from(document.querySelectorAll(sel));
         const orderList = document.querySelector('.order-list');
         const notice = document.getElementById('orders-notice');
+
+        socket.on('connect', () => {
+          // 기존 주문 카드들 모두 room 에 join
+          document.querySelectorAll('.order-card').forEach((card) => {
+            socket.emit('joinOrderRoom', card.dataset.id);
+          });
+        });
 
         // --- 테이블 필터링 ---
         $$(filterBtns).forEach((btn) => {
@@ -113,7 +126,11 @@
                   second: '2-digit',
                 })}</span>
               </div>
+              <div class="right-header">
+                <span class="order-status ${o.served ? 'status-served' : 'status-pending'}">${statusText}</span>
+              </div>
             </div>
+            
             <div class="order-items">
               ${o.items
                 .map(
@@ -138,6 +155,36 @@
             </div>`;
           return c;
         }
+        // --- 주문 상태 업데이트 함수 ---
+        function updateStatus(id, text) {
+          const card = document.querySelector(`.order-card[data-id="${id}"]`);
+          if (!card) return;
+          const statusElem = card.querySelector('.order-status');
+          if (!statusElem) return;
+
+          // 텍스트 교체
+          statusElem.textContent = text;
+
+          // 클래스 토글
+          const isServed = text === '서빙 완료';
+          statusElem.classList.toggle('status-served', isServed);
+          statusElem.classList.toggle('status-pending', !isServed);
+        }
+        // --- 실시간 상태 변경 반영 ---
+        // 1) 송금확인 되면 → 조리 중
+        socket.on('orderPaid', (order) => {
+          updateStatus(order._id, '조리 중');
+        });
+
+        // 2) 조리 완료되면 → 서빙 중
+        socket.on('orderCooked', (orderId) => {
+          updateStatus(orderId, '서빙 중');
+        });
+
+        // 3) 서빙 완료되면 → 서빙 완료
+        socket.on('orderServed', (orderId) => {
+          updateStatus(orderId, '서빙 완료');
+        });
       })();
     </script>
   </body>
