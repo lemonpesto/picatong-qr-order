@@ -104,21 +104,30 @@ a {
 
 .table-filter {
   display: flex;
+  align-items: center;
   gap: 14px;
   background: #fff;
-  border-radius: 4px;
-  margin: 24px 0;
+  border-radius: 2px;
+  margin: 18px 0 28px;
+  overflow-x: auto;
+  z-index: 999;
 }
+.table-filter::-webkit-scrollbar {
+  display: none;
+}
+
 .table-filter .filter-btn {
   margin: 0;
-  padding: 6px 16px;
+  white-space: nowrap;
+  padding: 8px 16px;
   background: #f2f2f2;
-  color: #333;
+  color: #484848;
   border: none;
   border-radius: 2px; /* 사각형 모서리 */
   cursor: pointer;
   transition: background 0.2s;
   font-size: 16px;
+  font-weight: 600;
 }
 .table-filter .filter-btn.active {
   background: #222;
@@ -210,6 +219,9 @@ a {
   margin-right: 8px; /* 체크박스 오른쪽 여백 */
   /* 3. (선택) 체크 색상 변경 */
   accent-color: #222; /* Chrome, Edge, Safari 지원 */
+}
+.serve-checkbox:disabled + .item-text {
+  color: #999;
 }
 
 /* 기본 텍스트 스타일 */
@@ -511,7 +523,8 @@ a {
   top: 50px;
   display: flex;
   gap: 10px;
-  padding: 8px 16px;
+  padding: 0 16px;
+  margin: 12px 0;
   overflow-x: auto;
   background: #fff;
   z-index: 999;

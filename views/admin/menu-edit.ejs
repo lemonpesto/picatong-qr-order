@@ -54,8 +54,6 @@
 
       editForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!confirm('정말 저장하시겠습니까?')) return;
-
         // 폼 데이터 수집
         const formData = new FormData(editForm);
         const payload = {

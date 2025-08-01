@@ -4,7 +4,6 @@ const { MongoClient, ObjectId } = require('mongodb');
 require('dotenv').config();
 
 app.use(express.static(__dirname + '/public'));
-
 app.set('view engine', 'ejs');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -84,55 +83,84 @@ connectDB
 passport.use(
   new LocalStrategy({ usernameField: 'tableNum', passwordField: 'accessKey' }, async (tableNum, accessKey, done) => {
     try {
+      // 1) admin 로그인
+      if (tableNum === 'admin') {
+        const admin = await db.collection('admins').findOne({ accessKey });
+        if (!admin) return done(null, false, { message: 'Invalid Admin Key' });
+        return done(null, { id: admin._id, role: 'admin' });
+      }
       const table = await db.collection('tables').findOne({ tableNum: parseInt(tableNum), accessKey: accessKey });
       if (!table) return done(null, false, { message: 'Invalid Table' });
-      return done(null, table);
+      return done(null, { id: table._id, role: 'user', tableNum: table.tableNum });
     } catch (e) {
       return done(e);
     }
   })
 );
 
-passport.serializeUser((table, done) => {
+passport.serializeUser((user, done) => {
   process.nextTick(() => {
-    done(null, { id: table._id, tableNum: table.tableNum });
+    done(null, { id: user.id, role: user.role, tableNum: user.tableNum });
   });
 });
 
-passport.deserializeUser(async (table, done) => {
-  let result = await db.collection('tables').findOne({ _id: new ObjectId(table.id) });
-  delete result.accessKey, result.isActive;
-  process.nextTick(() => {
-    done(null, result);
-  });
+passport.deserializeUser(async (sessionUser, done) => {
+  try {
+    if (sessionUser.role === 'admin') {
+      const admin = await db.collection('admins').findOne({ _id: new ObjectId(sessionUser.id) });
+      if (!admin) return done(null, false);
+      return done(null, { ...admin, role: 'admin' });
+    }
+
+    const table = await db.collection('tables').findOne({ _id: new ObjectId(sessionUser.id) });
+    if (!table) return done(null, false);
+    return done(null, { ...table, role: 'user', tableNum: sessionUser.tableNum });
+  } catch (e) {
+    return done(e);
+  }
 });
 
+// --- 로그인 라우트 (/login?role=admin&key=xxx 또는 /login?table=4&key=abc123) --- //
 app.get('/login', async (요청, 응답, next) => {
-  const { table, key } = 요청.query; // QR을 통해 /login?table=4&key=abc123 접속할 것.
+  const { role, table, key } = 요청.query;
+  const credentials = {
+    tableNum: role === 'admin' ? 'admin' : table,
+    accessKey: key,
+  };
   passport.authenticate('local', (err, user, info) => {
     if (err) return 응답.status(500).json(err);
     if (!user) return 응답.status(401).json(info.message);
     요청.logIn(user, (err) => {
       if (err) return next(err);
-      응답.redirect('/menu');
+      // 로그인 후 리다이렉트 분기
+      if (user.role === 'admin') return 응답.redirect('/admin/menu');
+      return 응답.redirect('/menu');
     });
-  })({ body: { tableNum: table, accessKey: key } }, 응답, next);
+  })({ body: credentials }, 응답, next);
 });
 
-function checkLogin(요청, 응답, next) {
-  if (!요청.user) {
-    return 응답.send('QR을 다시 찍어주세요.');
+// --- 로그인 미들 웨어 --- //
+function checkLogin(req, res, next) {
+  if (!req.user || req.user.role !== 'user') {
+    return res.status(401).send('테이블의 QR을 다시 찍어주세요.');
   }
-  응답.locals.tableNum = 요청.user.tableNum;
+  res.locals.tableNum = req.user.tableNum;
   next();
 }
+
+function checkAdmin(req, res, next) {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(401).send('관리자용 QR을 다시 찍어주세요.');
+  }
+  next();
+}
+
+// ------ 관리자 페이지 ------ //
+const adminRouter = require('./routes/admin')(io);
+app.use('/admin', checkAdmin, adminRouter);
+
+// ------ 손님 페이지 ------ //
 app.use(checkLogin);
-
-// app.get('/', async (요청, 응답) => {
-//   let result = await db.collection('menus').find().toArray();
-//   응답.render('menu.ejs', { 메뉴목록: result });
-// });
-
 app.get('/menu', async (요청, 응답) => {
   try {
     const menus = await db.collection('menus').find().toArray();
@@ -345,6 +373,3 @@ app.get('/orders/history', async (요청, 응답) => {
     응답.status(404).send('주문내역 불러오는 중 에러');
   }
 });
-// ------ 관리자 페이지 ------ //
-const adminRouter = require('./routes/admin')(io);
-app.use('/admin', adminRouter);
