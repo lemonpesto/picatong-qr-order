@@ -1,10 +1,10 @@
 @font-face {
-  font-family: 'Pretendard';
+  font-family: "Pretendard";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: local('Pretendard Regular'), local('Pretendard-Regular'), url('/fonts/Pretendard-Regular.woff2') format('woff2'),
-    url('/fonts/Pretendard-Regular.woff') format('woff'), url('/fonts/Pretendard-Regular.ttf') format('truetype');
+  src: local("Pretendard Regular"), local("Pretendard-Regular"), url("/fonts/Pretendard-Regular.woff2") format("woff2"), url("/fonts/Pretendard-Regular.woff") format("woff"),
+    url("/fonts/Pretendard-Regular.ttf") format("truetype");
 }
 
 /* 전역 폰트 설정 */
@@ -12,7 +12,7 @@ body,
 input,
 button,
 textarea {
-  font-family: 'Pretendard', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Pretendard", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 * {
   -webkit-text-size-adjust: none;
@@ -302,11 +302,13 @@ a {
 }
 
 /* 수량: 왼쪽 글자 / 오른쪽 버튼 */
-.sheet-qty-row {
+.sheet-body {
+  margin-bottom: 40px;
+}
+.qty-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 40px;
 }
 .qty-label {
   font-size: 16px;
@@ -328,9 +330,9 @@ a {
   justify-content: center;
 }
 .qty-btn {
-  font-family: 'Arial', sans-serif; /* 기본적으로 얇은 기호 */
   background: none;
   border: none;
+  color: #222;
   font-size: 20px;
   width: 20px; /* 버튼 너비 고정 */
   height: 20px;
@@ -340,12 +342,38 @@ a {
   padding: 0;
   cursor: pointer;
 }
+.qty-btn:disabled {
+  color: #aaa;
+}
 
 .qty {
   width: 20px;
   text-align: center;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 16px;
+}
+
+.comment-row {
+  display: flex;
+  flex-direction: column;
+  margin-top: 18px;
+}
+.comment-row input {
+  padding: 5px;
+  height: 25px;
+  margin-top: 8px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.subtext.comment {
+  margin: 2px 0 0 0;
+  font-size: 0.96em;
+  color: #666;
+  opacity: 0.95;
+  font-style: italic;
+  white-space: pre-line;
 }
 
 /* 주문 내역 페이지 */

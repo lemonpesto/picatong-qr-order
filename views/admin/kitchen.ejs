@@ -30,6 +30,9 @@
                 <label>
                   <input type="checkbox" class="cook-checkbox" <%= item.cooked ? 'checked' : '' %> />
                   <span class="item-text"><%= item.menuName %> x<%= item.qty %> </span>
+                  <% if (item.comment) { %>
+                  <p class="subtext comment"><%= item.comment %></p>
+                  <% } %>
                 </label>
               </li>
               <% }) %>

@@ -11,24 +11,24 @@
 </nav>
 
 <script>
-  const navBars = document.getElementById('nav-bars');
-  const sidebar = document.getElementById('sidebar');
+  const navBars = document.getElementById("nav-bars");
+  const sidebar = document.getElementById("sidebar");
 
   // 바 아이콘 클릭 → 토글
-  navBars.addEventListener('click', (e) => {
+  navBars.addEventListener("click", (e) => {
     e.stopPropagation(); // 아이콘 클릭 시 외부 클릭 핸들러 방지
-    sidebar.classList.toggle('open');
+    sidebar.classList.toggle("open");
   });
 
   // 사이드바 open && 클릭 대상이 사이드바/아이콘 X -> 닫기
-  document.addEventListener('click', (e) => {
-    if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== navBars) {
-      sidebar.classList.remove('open');
+  document.addEventListener("click", (e) => {
+    if (sidebar.classList.contains("open") && !sidebar.contains(e.target) && e.target !== navBars) {
+      sidebar.classList.remove("open");
     }
   });
 
   // 사이드바 내부 클릭 시 이벤트가 버블링되어 닫히는 걸 방지
-  sidebar.addEventListener('click', (e) => {
+  sidebar.addEventListener("click", (e) => {
     e.stopPropagation();
   });
 </script>

@@ -34,16 +34,17 @@ a {
 }
 
 .home-page,
-.kitchen-page,
-.menu-page {
+.kitchen-page {
   background: #fff;
   padding: 20px 16px;
 }
 
-.menu-page,
 .server-page,
 .orders-page {
-  padding: 0 16px 20px;
+  padding: 0 16px 16px;
+}
+.menu-page {
+  padding: 0 16px 90px;
 }
 
 .order-section + .order-section {
@@ -57,7 +58,7 @@ a {
   display: flex;
   align-items: center;
   background: #fff;
-  padding: 0 16px;
+  padding: 0 15px;
   font-weight: 600;
   z-index: 1001;
   padding-top: env(safe-area-inset-top);
@@ -69,7 +70,7 @@ a {
 }
 
 .page-title {
-  margin-left: 12px;
+  margin-left: 9px;
   font-size: 18px;
   font-weight: 700;
 }
@@ -78,7 +79,7 @@ a {
   position: fixed;
   top: 0;
   left: 0;
-  width: 150px;
+  width: 180px;
   height: 100%;
   padding-top: 60px;
   background: #272727;
@@ -99,7 +100,7 @@ a {
 }
 
 .sidebar a:hover {
-  background: #34495e;
+  background: #3c3c3c;
 }
 
 .table-filter {
@@ -431,7 +432,7 @@ a {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px; /* 제목과 폼 사이 간격 */
+  margin-bottom: 14px; /* 제목과 폼 사이 간격 */
 }
 
 .edit-header h3 {
@@ -440,18 +441,17 @@ a {
   font-weight: 700;
 }
 
-/* 휴지통 버튼 (기존 delete-icon) 위치 조정 불필요, 
-   .edit-header flex로 자동 오른쪽 정렬 */
-.delete-icon {
+/* .edit-header flex로 자동 오른쪽 정렬 */
+.delete-text {
   padding: 4px;
   border: none;
   background: transparent;
-  font-size: 18px; /* 필요 시 조정 */
-  color: #2b2b2b;
+  font-size: 14px;
+  font-weight: 700;
+  color: red;
+
+  text-decoration-line: underline;
   cursor: pointer;
-}
-.delete-icon:hover {
-  color: #484848;
 }
 
 .menu-card.new-card {
@@ -504,7 +504,7 @@ a {
   color: #fff;
   cursor: pointer;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .cancel-btn {
@@ -515,7 +515,7 @@ a {
   color: #777;
   cursor: pointer;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .category-tabs {
@@ -563,38 +563,37 @@ a {
   font-weight: 700;
 }
 
-.fab {
+.fab-container {
   position: fixed;
-  bottom: 10vw;
-  right: 10vw;
-  width: 48px;
-  height: 48px;
+  width: 100%;
+  bottom: 5vw;
+  /* right: 10vw; */
+  display: flex;
+  /* align-items: center; */
+  justify-content: center;
+  padding: 0;
+}
+
+.fab {
+  font-weight: 300;
+  color: #fff;
+  background: #222;
+  border: none;
+  font-size: 50px;
+  max-width: 50px; /* 버튼 너비 고정 */
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  font-size: 2.4rem;
-  border: none;
   border-radius: 50%;
-  background: #222;
-  color: #fff;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  text-decoration: none;
+  padding: 0;
   cursor: pointer;
   z-index: 1000;
 }
 
-.fab i {
-  margin: 0;
-  pointer-events: none;
-}
-
 .fab:hover {
   background: #2e2e2e;
-}
-
-.fab:focus {
-  outline: none;
 }
 
 .toast-msg {

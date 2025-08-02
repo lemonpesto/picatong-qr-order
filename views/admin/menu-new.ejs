@@ -10,13 +10,15 @@
   <body>
     <%- include('./partial/sidebar') %>
     <div class="edit-page">
-      <h3>메뉴 추가</h3>
+      <div class="edit-header">
+        <h3>메뉴 추가</h3>
+      </div>
       <form action="/admin/menu" method="POST">
         <label>메뉴명</label>
         <input name="name" value="" placeholder="예: 감자튀김" required />
 
         <label>가격</label>
-        <input name="price" type="number" value="" placeholder="예: 4000" required />
+        <input name="price" type="number" value="" placeholder="예: 4000" />
 
         <label>카테고리</label>
         <select name="category">

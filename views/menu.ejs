@@ -22,12 +22,7 @@
     <div id="section-<%= cat.name %>" class="menu-section">
       <h3><%= cat.name %></h3>
       <% const filtered = menus.filter(m => m.category === cat.name); filtered.forEach((menu, j) => { const soldOut = !menu.isActive; %>
-      <div
-        class="list-box menu-box <%= soldOut ? ' sold-out' : '' %>"
-        data-menuid="<%= menu._id %>"
-        data-name="<%= menu.name %>"
-        data-price="<%= menu.price %>"
-      >
+      <div class="list-box menu-box <%= soldOut ? ' sold-out' : '' %>" data-menuid="<%= menu._id %>" data-name="<%= menu.name %>" data-price="<%= menu.price %>">
         <h4><%= soldOut ? `(품절) ${menu.name}` : menu.name %></h4>
         <p class="price"><%= menu.price.toLocaleString() %>원</p>
         <p class="description"><%= menu.description || '' %></p>
@@ -55,18 +50,26 @@
         <div class="sheet-subheader">
           <span id="sheet-price">단가</span>
         </div>
-        <div class="sheet-qty-row">
-          <span class="qty-label">수량</span>
-          <div class="qty-control">
-            <button id="minus" class="qty-btn" disabled>
-              <i class="fa-solid fa-minus fa-2xs"></i>
-            </button>
-            <span id="qty" class="qty">1</span>
-            <button id="plus" class="qty-btn">
-              <i class="fa-solid fa-plus fa-2xs"></i>
-            </button>
+        <div class="sheet-body">
+          <div class="qty-row">
+            <span class="qty-label">수량</span>
+            <div class="qty-control">
+              <button id="minus" class="qty-btn" disabled>
+                <i class="fa-solid fa-minus fa-2xs"></i>
+              </button>
+              <span id="qty" class="qty">1</span>
+              <button id="plus" class="qty-btn">
+                <i class="fa-solid fa-plus fa-2xs"></i>
+              </button>
+            </div>
+          </div>
+          <!-- 요청사항 입력란 (칵테일 오마카세 메뉴만 보임) -->
+          <div id="comment-row" class="comment-row">
+            <label for="sheet-comment">요청사항</label>
+            <input id="sheet-comment" type="text" placeholder="예: 덜 달게, 상큼하게 등" maxlength="50" />
           </div>
         </div>
+
         <button id="add-to-cart" class="cart-button">0원 장바구니에 담기</button>
       </div>
     </div>
@@ -75,9 +78,9 @@
     <div id="overlay" class="overlay hidden"></div>
 
     <script>
-      window.addEventListener('resize', () => {
-        const bar = document.querySelector('.bottom-bar');
-        bar.style.position = document.body.scrollHeight > window.innerHeight ? 'sticky' : 'fixed';
+      window.addEventListener("resize", () => {
+        const bar = document.querySelector(".bottom-bar");
+        bar.style.position = document.body.scrollHeight > window.innerHeight ? "sticky" : "fixed";
       });
     </script>
     <script src="/toast.js"></script>
@@ -86,136 +89,147 @@
     <!-- Socket.IO -->
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      document.addEventListener('DOMContentLoaded', () => {
+      document.addEventListener("DOMContentLoaded", () => {
         const socket = io();
-        let currPrice = 0;
-        let currMenuId = null;
-        let qty = 1;
+        let currMenuId = null,
+          currPrice = 0,
+          qty = 1,
+          currMenuName = "";
+
         // utility: 장바구니 버튼 텍스트 갱신
         function updateAddToCartButton(qty) {
           const total = currPrice * qty;
-          const button = document.getElementById('add-to-cart');
+          const button = document.getElementById("add-to-cart");
           button.textContent = `${total.toLocaleString()}원 장바구니에 담기`;
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener("DOMContentLoaded", () => {
           updateCartButton();
         });
 
         // 소켓 이벤트
-        socket.on('menuUpdated', updateExistingMenu);
-        socket.on('menuAdded', addNewMenu);
-        socket.on('menuDeleted', deleteMenuBox);
+        socket.on("menuUpdated", updateExistingMenu);
+        socket.on("menuAdded", addNewMenu);
+        socket.on("menuDeleted", deleteMenuBox);
 
         function attachBoxListener(box) {
-          box.addEventListener('click', () => {
-            if (box.classList.contains('sold-out')) return;
+          box.addEventListener("click", () => {
+            if (box.classList.contains("sold-out")) return;
             openBottomSheet(box);
           });
         }
 
         // 기존 박스 초기화
-        document.querySelectorAll('.list-box').forEach(attachBoxListener);
+        document.querySelectorAll(".list-box").forEach(attachBoxListener);
 
         // 바텀 시트 이벤트 바인딩
-        document.getElementById('plus').addEventListener('click', () => {
+        document.getElementById("plus").addEventListener("click", () => {
           qty++;
-          document.getElementById('qty').textContent = qty;
-          document.getElementById('minus').disabled = false;
+          document.getElementById("qty").textContent = qty;
+          document.getElementById("minus").disabled = false;
           updateAddToCartButton(qty);
         });
-        document.getElementById('minus').addEventListener('click', () => {
+        document.getElementById("minus").addEventListener("click", () => {
           if (qty > 1) qty--;
-          document.getElementById('qty').textContent = qty;
-          document.getElementById('minus').disabled = qty === 1;
+          document.getElementById("qty").textContent = qty;
+          document.getElementById("minus").disabled = qty === 1;
           updateAddToCartButton(qty);
         });
 
-        document.getElementById('add-to-cart').addEventListener('click', async () => {
-          const name = document.getElementById('sheet-name').textContent;
-          const qty = document.getElementById('qty').textContent;
+        document.getElementById("add-to-cart").addEventListener("click", async () => {
+          const name = document.getElementById("sheet-name").textContent;
+          const qty = document.getElementById("qty").textContent;
+          const comment = document.getElementById("comment-row").style.display !== "none" ? document.getElementById("sheet-comment").value.trim() : null;
           try {
             const res = await fetch(`/cart/add?menuid=${currMenuId}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 name,
                 price: currPrice,
                 qty,
+                comment,
               }),
             });
-            if (!res.ok) {
-              const msg = await res.text();
-              throw new Error('서버 오류: ' + msg);
-            }
+            if (!res.ok) throw new Error("서버 오류");
             await updateCartButton();
-
             const msg = await res.text();
             showToast(msg); // 예: "메뉴를 추가했습니다."
           } catch (err) {
-            console.error('장바구니 담기 실패:', err);
-            showToast('문제가 발생했어요 😢');
+            showToast("문제가 발생했어요 😢");
           }
           // 바텀 시트 닫기
           closeBottomSheet();
         });
 
-        document.getElementById('close-sheet').addEventListener('click', closeBottomSheet);
-        document.getElementById('overlay').addEventListener('click', closeBottomSheet);
+        document.getElementById("close-sheet").addEventListener("click", closeBottomSheet);
+        document.getElementById("overlay").addEventListener("click", closeBottomSheet);
 
         function closeBottomSheet() {
-          document.getElementById('bottom-sheet').classList.add('hidden');
-          document.getElementById('overlay').classList.add('hidden');
+          document.getElementById("bottom-sheet").classList.add("hidden");
+          document.getElementById("overlay").classList.add("hidden");
         }
 
         function openBottomSheet(box) {
           currMenuId = box.dataset.menuid;
+          currMenuName = box.dataset.name;
           currPrice = parseInt(box.dataset.price);
           qty = 1;
 
           // 바텀 시트 요소들 초기화
-          document.getElementById('sheet-name').textContent = box.dataset.name;
-          document.getElementById('qty').textContent = '1';
-          document.getElementById('sheet-price').textContent = currPrice.toLocaleString() + '원';
-          document.getElementById('minus').disabled = true;
+          document.getElementById("sheet-name").textContent = box.dataset.name;
+          document.getElementById("qty").textContent = "1";
+          document.getElementById("sheet-price").textContent = currPrice.toLocaleString() + "원";
+          document.getElementById("minus").disabled = true;
+
+          // 오마카세일 때만 comment 입력란 노출
+          const commentRow = document.getElementById("comment-row");
+          const commentInput = document.getElementById("sheet-comment");
+          if (currMenuName.includes("오마카세")) {
+            // 이름으로 판별 (id나 태그 추가해도 OK)
+            commentRow.style.display = "";
+            commentInput.value = "";
+          } else {
+            commentRow.style.display = "none";
+            commentInput.value = "";
+          }
 
           // 장바구니 버튼 텍스트 초기화
           updateAddToCartButton(1);
-
           // 바텀 시트, 오버레이 보이기
-          document.getElementById('bottom-sheet').classList.remove('hidden');
-          document.getElementById('overlay').classList.remove('hidden');
+          document.getElementById("bottom-sheet").classList.remove("hidden");
+          document.getElementById("overlay").classList.remove("hidden");
         }
 
         function updateExistingMenu(menu) {
           const box = document.querySelector(`.list-box[data-menuid="${menu._id}"]`);
           if (!box) return;
           const soldOut = !menu.isActive;
-          box.classList.toggle('sold-out', soldOut);
+          box.classList.toggle("sold-out", soldOut);
           box.dataset.name = menu.name;
           box.dataset.price = menu.price;
-          box.querySelector('h4').textContent = soldOut ? `(품절) ${menu.name}` : menu.name;
-          box.querySelector('.price').textContent = `${menu.price.toLocaleString()}원`;
-          box.querySelector('.description').textContent = menu.description || '';
+          box.querySelector("h4").textContent = soldOut ? `(품절) ${menu.name}` : menu.name;
+          box.querySelector(".price").textContent = `${menu.price.toLocaleString()}원`;
+          box.querySelector(".description").textContent = menu.description || "";
         }
         function addNewMenu(menu) {
           const section = document.getElementById(`section-${menu.category}`);
           if (!section) return;
-          const box = document.createElement('div');
-          box.className = 'list-box';
-          if (!menu.isActive) box.classList.add('sold-out');
+          const box = document.createElement("div");
+          box.className = "list-box";
+          if (!menu.isActive) box.classList.add("sold-out");
           box.dataset.menuid = menu._id;
           box.dataset.name = menu.name;
           box.dataset.price = menu.price;
           box.innerHTML = `
             <h4>${menu.isActive ? menu.name : `(품절) ${menu.name}`}</h4>
             <p class="price">${menu.price.toLocaleString()}원</p>
-            <p class="description">${menu.description || ''}</p>
+            <p class="description">${menu.description || ""}</p>
           `;
           attachBoxListener(box);
-          const divider = document.createElement('div');
-          divider.className = 'menu-divider';
-          const hasExisting = section.querySelector('.list-box') !== null;
+          const divider = document.createElement("div");
+          divider.className = "menu-divider";
+          const hasExisting = section.querySelector(".list-box") !== null;
           hasExisting ? section.append(divider, box) : section.append(box);
         }
         function deleteMenuBox(id) {
@@ -223,29 +237,29 @@
           if (!box) return;
           const next = box.nextElementSibling;
           box.remove();
-          if (next && next.classList.contains('menu-divider')) next.remove();
+          if (next && next.classList.contains("menu-divider")) next.remove();
         }
 
         function showToast(msg) {
-          const t = document.getElementById('toast');
+          const t = document.getElementById("toast");
           t.textContent = msg;
-          t.classList.add('show');
-          setTimeout(() => t.classList.remove('show'), 2000);
+          t.classList.add("show");
+          setTimeout(() => t.classList.remove("show"), 2000);
         }
         async function updateCartButton() {
           try {
-            const res = await fetch('/cart/summary');
+            const res = await fetch("/cart/summary");
             const data = await res.json(); // { total: 12000, count: 3 }
 
-            const viewCart = document.getElementById('view-cart');
+            const viewCart = document.getElementById("view-cart");
             if (data.count > 0) {
               viewCart.textContent = `총 ${data.total.toLocaleString()}원 장바구니 보기 (${data.count})`;
-              viewCart.classList.remove('hidden');
+              viewCart.classList.remove("hidden");
             } else {
-              viewCart.classList.add('hidden');
+              viewCart.classList.add("hidden");
             }
           } catch (err) {
-            console.error('장바구니 정보 가져오기 실패:', err);
+            console.error("장바구니 정보 가져오기 실패:", err);
           }
         }
       });

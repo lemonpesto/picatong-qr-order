@@ -35,7 +35,7 @@ app.use(
     secret: "암호화에 쓸 비번",
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 2 * 60 * 60 * 1000 },
+    cookie: { maxAge: 7 * 60 * 60 * 1000 },
     store: MongoStore.create({
       mongoUrl: process.env.DB_URL,
       dbName: "picatong-qr-order",
@@ -146,7 +146,7 @@ app.get("/login", async (요청, 응답, next) => {
 // --- 로그인 미들 웨어 --- //
 function checkLogin(req, res, next) {
   if (!req.user || req.user.role !== "user") {
-    return res.status(401).send("테이블의 QR을 다시 찍어주세요.");
+    return res.status(401).send("QR을 다시 찍어주세요.");
   }
   res.locals.tableNum = req.user.tableNum;
   next();
@@ -154,7 +154,7 @@ function checkLogin(req, res, next) {
 
 function checkAdmin(req, res, next) {
   if (!req.user || req.user.role !== "admin") {
-    return res.status(401).send("관리자용 QR을 다시 찍어주세요.");
+    return res.status(401).send("QR을 다시 찍어주세요.");
   }
   next();
 }
@@ -180,15 +180,15 @@ app.get("/menu", async (요청, 응답) => {
 app.post("/cart/add", async (요청, 응답) => {
   const tableId = 요청.user._id;
   const menuId = new ObjectId(요청.query.menuid);
-  const { name, price, qty } = 요청.body;
+  const { name, price, qty, comment } = 요청.body;
 
-  const item = await db.collection("cart").findOne({ tableId: tableId, menuId: new ObjectId(menuId) });
+  const item = await db.collection("cart").findOne({ tableId: tableId, menuId: new ObjectId(menuId), comment: comment || null });
   const menu = await db.collection("menus").findOne({ _id: menuId });
 
   if (item) {
     // 이미 담은 메뉴라면
-    let totalQty = item["qty"] + parseInt(qty);
-    await db.collection("cart").updateOne({ tableId: tableId, menuId: new ObjectId(menuId) }, { $set: { qty: totalQty } });
+    let totalQty = item.qty + parseInt(qty);
+    await db.collection("cart").updateOne({ tableId: tableId, menuId: menuId }, { $set: { qty: totalQty } });
   } else {
     await db.collection("cart").insertOne({
       tableId: tableId,
@@ -197,6 +197,7 @@ app.post("/cart/add", async (요청, 응답) => {
       price: parseInt(price),
       manufacturing: menu.manufacturing,
       qty: parseInt(qty),
+      comment: comment || null,
     });
   }
   응답.send("메뉴를 추가했습니다.");
@@ -309,6 +310,7 @@ app.post("/payment/confirm", async (요청, 응답) => {
         manufacturing: item.manufacturing,
         qty: item.qty,
         cooked: false,
+        comment: item.comment || null,
       })),
       total,
 
@@ -334,9 +336,6 @@ app.post("/payment/confirm", async (요청, 응답) => {
       items: orderDoc.items, // manufacturing 포함
       total: orderDoc.total,
       requestedAt: orderDoc.requestedAt,
-      paid: orderDoc.paid,
-      completed: orderDoc.completed,
-      served: orderDoc.served,
     });
 
     // 장바구니 비우고 리다이렉트
