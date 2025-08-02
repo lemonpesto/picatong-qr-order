@@ -13,7 +13,6 @@
       <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #ff8c00"></i>
       <h3>운영진이 송금 내역을 확인하러 오는 중이니<br />잠시만 기다려주세요!</h3>
       <span class="confirm-subtext"> 운영진이 도착하지 않으면 직접 말씀해주세요 </span>
-
       <div class="inline-action" style="display: none">
         <button type="submit" class="outline-button inline-button">추가 주문하기</button>
       </div>
@@ -22,52 +21,20 @@
     <script src="/toast.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/socket.io@4.7.2/client-dist/socket.io.min.js"></script>
     <script>
+      // 결제 확정 실시간 처리
       const socket = io();
-      // 1) URL에서 orderId 파싱
       const params = new URLSearchParams(window.location.search);
       const orderId = params.get("orderId");
 
       if (orderId) {
-        // 2) 해당 주문 ID 방에 참여
         socket.emit("joinOrderRoom", orderId);
-
-        // 운영진이 송금 확인 -> 고객 주문접수 페이지로
         socket.on("orderConfirmed", () => {
           window.location.href = `/payment/confirm-success?orderId=${orderId}`;
         });
-        // 운영진이 주문 삭제 -> 고객 주문취소 페이지로
         socket.on("orderCancelled", () => {
           window.location.href = `/payment/confirm-cancel`;
         });
       }
-    </script>
-    <script>
-      // smartSticky.js
-      window.addEventListener("DOMContentLoaded", () => {
-        const bar = document.querySelector(".bottom-bar");
-        if (!bar) return;
-
-        const isScrollable = document.body.scrollHeight > window.innerHeight;
-        if (!isScrollable) {
-          bar.style.position = "fixed";
-        } else {
-          bar.style.position = "sticky";
-        }
-      });
-      const account = document.getElementById("account-number");
-      const toast = document.getElementById("toast");
-
-      account.addEventListener("click", async () => {
-        try {
-          await navigator.clipboard.writeText("3333257857250");
-          toast.classList.add("show");
-          setTimeout(() => {
-            toast.classList.remove("show");
-          }, 2000);
-        } catch (err) {
-          showToast("복사에 실패했습니다: " + err);
-        }
-      });
     </script>
   </body>
 </html>

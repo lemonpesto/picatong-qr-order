@@ -1,19 +1,19 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const categoryBar = document.querySelector('.category-bar');
-  const buttons = document.querySelectorAll('.category-button');
-  const sections = document.querySelectorAll('.menu-section');
+document.addEventListener("DOMContentLoaded", () => {
+  const categoryBar = document.querySelector(".category-bar");
+  const buttons = document.querySelectorAll(".category-button");
+  const sections = document.querySelectorAll(".menu-section");
 
   let autoScrollInProgress = false;
-  let autoScrollTimeout;
+  let autoScrollTimeout = null;
 
-  // 1) 버튼 클릭 → 즉시 active 설정 & 자동 스크롤 플래그 토글
+  // 클릭 이벤트
   buttons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      // (a) 클릭 즉시 active
-      buttons.forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
+    btn.addEventListener("click", () => {
+      // 1. 클릭 즉시 active
+      buttons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
 
-      // (b) 자동 스크롤 시작
+      // 2. 자동 스크롤
       const targetId = btn.dataset.target;
       const targetSection = document.getElementById(targetId);
       if (!targetSection) return;
@@ -21,23 +21,23 @@ document.addEventListener('DOMContentLoaded', () => {
       const yOffset = -categoryBar.offsetHeight - 50;
       const y = targetSection.getBoundingClientRect().top + window.pageYOffset + yOffset;
 
-      // 플래그 올리고, 이전 타이머 지운 뒤 스크롤
       autoScrollInProgress = true;
       clearTimeout(autoScrollTimeout);
-      window.scrollTo({ top: y, behavior: 'smooth' });
+      window.scrollTo({ top: y, behavior: "smooth" });
 
-      // 500ms 후 자동 스크롤 끝난 걸로 간주
+      // 3. 자동 스크롤 종료 후에만, 스크롤 감지가 active 토글 가능
       autoScrollTimeout = setTimeout(() => {
         autoScrollInProgress = false;
-      }, 500);
+      }, 700); // 700ms로 살짝 늘려서 "불안정" 느낌 없게!
     });
   });
 
-  // 2) 스크롤 감지 → 자동 스크롤 중이면 무시, 아니면 섹션 기준 active 토글
-  window.addEventListener('scroll', () => {
+  // 스크롤 이벤트 (버튼 루프 밖! 단 1회만)
+  window.addEventListener("scroll", () => {
+    // 1. 자동 스크롤 중엔 무시!
     if (autoScrollInProgress) return;
 
-    let currentSectionId = '';
+    let currentSectionId = "";
     const scrollY = window.scrollY;
 
     sections.forEach((section) => {
@@ -49,7 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     buttons.forEach((btn) => {
-      btn.dataset.target === currentSectionId ? btn.classList.add('active') : btn.classList.remove('active');
+      if (btn.dataset.target === currentSectionId) btn.classList.add("active");
+      else btn.classList.remove("active");
     });
   });
 });

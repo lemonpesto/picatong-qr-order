@@ -54,10 +54,9 @@
           </div>
         </div>
         <% }) %>
-
-        <div id="orders-notice" class="inline-action <%= orders.length > 0 ? 'hidden' : '' %>">
-          <p>주문 내역이 없습니다</p>
-        </div>
+      </div>
+      <div id="orders-notice" class="inline-action <%= orders.length > 0 ? 'hidden' : '' %>">
+        <p>주문 내역이 없습니다</p>
       </div>
     </div>
 
@@ -166,7 +165,6 @@
               notice.classList.remove("hidden");
             } else {
               notice.classList.add("hidden");
-              // 3) 카드 생성 & 삽입
               orders.forEach((o) => orderList.append(createOrderCard(o)));
             }
             // 4) 방별 join (실시간 하위 이벤트 수신용)

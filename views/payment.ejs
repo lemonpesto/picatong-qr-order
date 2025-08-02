@@ -11,52 +11,48 @@
     <%- include("nav.ejs") %>
     <div class="payment-container">
       <h3>총 <span class="highlight"><%= total.toLocaleString() %></span>원<br />아래 계좌로 지금 바로 송금해주세요!</h3>
-      <p class="account">
-        <span id="account-number" class="account-number" style="cursor: pointer">카카오뱅크 3333257857250</span><span> (김세진)</span><br />
-        <div id="toast" class="toast-msg">계좌번호가 복사됐어요</div>
-      </p>
-        
+      <p class="account"><span id="account-number" class="account-number" style="cursor: pointer">카카오뱅크 3333257857250</span><span> (김세진)</span><br /></p>
+      <div id="toast" class="toast-msg"></div>
+
       <div class="bottom-bar">
         <form action="/payment/confirm" class="payment-form" method="POST">
           <p class="payment-info">
             아래의 송금 완료 버튼을 누르면<br />
             운영진이 송금 여부를 확인하러 옵니다.
           </p>
-          <button type="submit" class="bottom-button">
-            총 <%= total.toLocaleString() %>원 송금 완료
-          </button>
+          <button type="submit" class="bottom-button">총 <%= total.toLocaleString() %>원 송금 완료</button>
         </form>
       </div>
     </div>
-    <div id="toast" class="toast-msg"></div>
     <script src="/toast.js"></script>
     <script>
       // smartSticky.js
-      window.addEventListener('DOMContentLoaded', () => {
-        const bar = document.querySelector('.bottom-bar');
+      window.addEventListener("DOMContentLoaded", () => {
+        const bar = document.querySelector(".bottom-bar");
         if (!bar) return;
 
         const isScrollable = document.body.scrollHeight > window.innerHeight;
         if (!isScrollable) {
-          bar.style.position = 'fixed';
+          bar.style.position = "fixed";
         } else {
-          bar.style.position = 'sticky';
+          bar.style.position = "sticky";
         }
       });
-      const account = document.getElementById('account-number');
-      const toast = document.getElementById('toast');
+      const account = document.getElementById("account-number");
+      const toast = document.getElementById("toast");
 
-      account.addEventListener('click', async () => {
+      account.addEventListener("click", async () => {
         try {
-          await navigator.clipboard.writeText('카카오뱅크 3333257857250');
-          toast.classList.add('show');
-          setTimeout(() => {
-            toast.classList.remove('show');
-          }, 2000);
+          await navigator.clipboard.writeText("카카오뱅크 3333257857250");
+          toast.textContent = "계좌번호가 복사됐어요";
+          toast.classList.add("show");
+          setTimeout(() => toast.classList.remove("show"), 2000);
         } catch (err) {
-          showToast('복사에 실패했습니다: ' + err);
+          toast.textContent = "복사에 실패했습니다: " + err;
+          toast.classList.add("show");
+          setTimeout(() => toast.classList.remove("show"), 2000);
         }
       });
-</script>
+    </script>
   </body>
 </html>

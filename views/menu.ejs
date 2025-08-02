@@ -103,9 +103,7 @@
           button.textContent = `${total.toLocaleString()}원 장바구니에 담기`;
         }
 
-        window.addEventListener("DOMContentLoaded", () => {
-          updateCartButton();
-        });
+        updateCartButton();
 
         // 소켓 이벤트
         socket.on("menuUpdated", updateExistingMenu);

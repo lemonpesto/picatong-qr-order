@@ -29,7 +29,6 @@ io.on("connection", (socket) => {
   });
 });
 
-app.use(passport.initialize());
 app.use(
   session({
     secret: "암호화에 쓸 비번",
@@ -42,6 +41,7 @@ app.use(
     }),
   })
 );
+app.use(passport.initialize());
 app.use(passport.session());
 
 const { S3Client } = require("@aws-sdk/client-s3");

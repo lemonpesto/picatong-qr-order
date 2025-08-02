@@ -21,7 +21,7 @@
       <input name="name" value="<%= menu.name %>" required>
 
       <label>가격</label>
-      <input name="price" type="number" value="<%= menu.price %>" required>
+      <input name="price" type="number" min="0" step="100" value="<%= menu.price %>" required>
 
       <label>카테고리</label>
       <select name="category">
@@ -33,12 +33,12 @@
       </select>
 
       <label>설명</label>
-      <textarea name="description"><%= menu?.description || '' %></textarea>
+      <textarea name="description"><%= menu.description || '' %></textarea>
 
       <label>상태</label>
       <select name="status">
-        <option value="true" <%= menu?.isActive?'selected':'' %> >판매중</option>
-        <option value="false" <%= !menu?.isActive?'selected':'' %> >품절</option>
+        <option value="true" <%= menu.isActive?'selected':'' %> >판매중</option>
+        <option value="false" <%= !menu.isActive?'selected':'' %> >품절</option>
       </select>
 
       <button type="submit" class="save-btn">저장</button>
