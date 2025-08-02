@@ -110,6 +110,8 @@
 
         // 1) 결제 확인(주방 대상) 주문
         socket.on("orderPaid", (order) => {
+          console.log("orderPaid 이벤트 수신!", order);
+
           const items = order.items.filter((i) => i.manufacturing);
           if (!items.length) return;
 
@@ -125,7 +127,6 @@
                   minute: "2-digit",
                   second: "2-digit",
                 })}</span>
-                
               </div>
             </div>
             <div class="order-items">
@@ -137,7 +138,7 @@
                     <label>
                       <input type="checkbox" class="cook-checkbox" />
                       <span class="item-text">${i.menuName} x${i.qty}</span>
-                      ${item.comment ? `<span class="subtext comment">${item.comment}</span>` : ""}
+                      ${i.comment ? `<span class="subtext comment">${i.comment}</span>` : ""}
                     </label>
                   </li>`
                   )

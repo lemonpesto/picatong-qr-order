@@ -239,12 +239,18 @@ app.get("/cart", async (요청, 응답) => {
 
 app.post("/cart/update", async (요청, 응답) => {
   const menuId = 요청.query.menuid;
+  const comment = 요청.query.comment || "";
   const qty = parseInt(요청.body.qty);
   const tableId = 요청.user._id;
 
-  let tmp = await db.collection("cart").findOne({ tableId: tableId });
+  // comment가 ''로 들어왔으면 null도 같이 고려
+  const filter = {
+    tableId: tableId,
+    menuId: new ObjectId(menuId),
+    $or: [{ comment: comment }, { comment: comment === "" ? null : "__never__" }],
+  };
 
-  const result = await db.collection("cart").updateOne({ tableId: tableId, menuId: new ObjectId(menuId) }, { $set: { qty: qty } });
+  const result = await db.collection("cart").updateOne(filter, { $set: { qty: qty } });
 
   if (result.modifiedCount === 0) {
     응답.status(404).send("해당 항목을 찾을 수 없습니다.");
@@ -255,12 +261,16 @@ app.post("/cart/update", async (요청, 응답) => {
 
 app.delete("/cart/delete", async (요청, 응답) => {
   const menuId = 요청.query.menuid;
+  const comment = 요청.query.comment || "";
   const tableId = 요청.user._id;
 
-  const result = await db.collection("cart").deleteOne({
+  const filter = {
     tableId: new ObjectId(tableId),
     menuId: new ObjectId(menuId),
-  });
+    $or: [{ comment: comment }, { comment: comment === "" ? null : "__never__" }],
+  };
+
+  const result = await db.collection("cart").deleteOne(filter);
 
   if (result.deletedCount === 0) {
     응답.status(404).send("삭제할 항목이 없습니다.");
@@ -300,6 +310,9 @@ app.post("/payment/confirm", async (요청, 응답) => {
 
     // 총 금액 계산
     const total = cartItems.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+    // 카트에 담긴 메뉴가 전부 비제조 메뉴면 그 주문의 completed 속성을 true로 저장
+    const allNonManufacturing = cartItems.every((item) => !item.manufacturing);
     // 주문 데이터 구성
     const orderDoc = {
       // 기본 주문 정보
@@ -317,7 +330,7 @@ app.post("/payment/confirm", async (요청, 응답) => {
 
       // 상태 정보
       paid: false,
-      completed: false,
+      completed: allNonManufacturing,
       served: false,
 
       // 시간 정보
