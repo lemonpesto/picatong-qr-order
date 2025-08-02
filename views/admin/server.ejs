@@ -64,10 +64,13 @@
           <div class="order-items">
             <ul>
               <% order.items.forEach(item => { %>
-              <li data-menu-id="<%= item.menuId %>">
+              <li data-menu-id="<%= item.menuId %>" data-comment="<%= item.comment || '' %>">
                 <label>
                   <input type="checkbox" class="serve-checkbox" <%- (!item.manufacturing || item.cooked) ? '' : 'disabled' %> />
                   <span class="item-text"><%= item.menuName %> x<%= item.qty %> </span>
+                  <% if (item.comment) { %>
+                  <span class="subtext comment"><%= item.comment %></span>
+                  <% } %>
                 </label>
               </li>
               <% }) %>
@@ -183,31 +186,39 @@
 
         // --- 실시간 이벤트 수신 & 카드 생성 ---
         socket.on("newOrder", (order) => {
-          paidList.prepend(createPaidCard(order));
+          paidList.append(createPaidCard(order));
           updateNotices();
         });
 
         socket.on("orderPaid", (order) => {
-          serveList.prepend(createServeCard(order));
+          serveList.append(createServeCard(order));
           socket.emit("joinOrderRoom", order._id);
           updateNotices();
         });
 
-        socket.on("itemCooked", ({ orderId, menuId }) => {
+        function findCheckbox(card, menuId, comment) {
+          // comment가 null/undefined일 경우 ''로 통일
+          comment = comment || "";
+          return card.querySelector(`li[data-menu-id="${menuId}"][data-comment="${comment.replace(/"/g, "&quot;")}"] .serve-checkbox`);
+        }
+
+        // 예시: itemCooked 이벤트에서
+        socket.on("itemCooked", ({ orderId, menuId, comment }) => {
           const card = serveList.querySelector(`[data-order-id="${orderId}"]`);
           if (!card) return;
-          const chk = card.querySelector(`li[data-menu-id="${menuId}"] .serve-checkbox`);
-          chk.disabled = false;
-          if ([...card.querySelectorAll(".serve-checkbox")].every((c) => !c.disabled)) card.querySelector(".btn-serve-complete").disabled = false;
+          const chk = findCheckbox(card, menuId, comment);
+          if (chk) chk.disabled = false;
         });
 
-        socket.on("itemUncooked", ({ orderId, menuId }) => {
+        socket.on("itemUncooked", ({ orderId, menuId, comment }) => {
           const card = serveList.querySelector(`[data-order-id="${orderId}"]`);
           if (!card) return;
-          const chk = card.querySelector(`li[data-menu-id="${menuId}"] .serve-checkbox`);
-          chk.disabled = true;
-          chk.checked = false;
-          card.querySelector(".btn-serve-complete").disabled = true;
+          const chk = findCheckbox(card, menuId, comment);
+          if (chk) {
+            chk.disabled = true;
+            chk.checked = false;
+            card.querySelector(".btn-serve-complete").disabled = true;
+          }
         });
 
         socket.on("orderCooked", (orderId) => {
@@ -269,11 +280,12 @@
                 ${o.items
                   .map(
                     (item) => `
-                  <li data-menu-id="${item.menuId}">
+                  <li data-menu-id="${item.menuId}" data-comment="${item.comment || ""}">
                     <label>
                       <input type="checkbox" class="serve-checkbox"
                         ${!item.manufacturing ? "" : "disabled"} />
                       <span class="item-text">${item.menuName} x${item.qty}</span>
+                      ${item.comment ? `<span class="subtext comment">${item.comment}</span>` : ""}
                     </label>
                   </li>`
                   )

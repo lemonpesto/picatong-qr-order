@@ -326,6 +326,7 @@ a {
   display: grid;
   gap: 18px;
   grid-template-columns: 1fr;
+  margin-bottom: 18px;
 }
 
 .menu-card,
@@ -406,6 +407,13 @@ a {
   justify-content: space-between;
   padding: 0.5em 0;
 }
+
+.subtext.comment {
+  font-size: 14px;
+  color: #888;
+  padding: 0 4px;
+}
+
 .orders-page .order-footer {
   border-top: 1px solid #eee;
   padding-top: 8px;
@@ -425,6 +433,7 @@ a {
 .status-served {
   color: green;
 }
+
 /* 메뉴 편집 */
 
 /* ----- 헤더 영역 스타일 ----- */

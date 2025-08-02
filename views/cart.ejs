@@ -17,7 +17,13 @@
       <% menus.forEach((menu, i) => { %>
       <div class="cart-items list-box" data-name="<%= menu.name %>" data-price="<%= menu.price %>" data-menuid="<%= menu.menuId %>">
         <div class="menu-info">
-          <h4><%= menu.menuName %></h4>
+          <div class="left-info">
+            <h4><%= menu.menuName %></h4>
+            <% if (i.comment) { %>
+            <span class="subtext comment"><%= i.comment %></span>
+            <% } %>
+          </div>
+
           <p class="price"><%= menu.price.toLocaleString() %>원</p>
         </div>
         <div class="cart-item qty-control">
@@ -49,15 +55,15 @@
     <script src="/cart.js"></script>
     <script>
       // smartSticky.js
-      window.addEventListener('DOMContentLoaded', () => {
-        const bar = document.querySelector('.bottom-bar');
+      window.addEventListener("DOMContentLoaded", () => {
+        const bar = document.querySelector(".bottom-bar");
         if (!bar) return;
 
         const isScrollable = document.body.scrollHeight > window.innerHeight;
         if (!isScrollable) {
-          bar.style.position = 'fixed';
+          bar.style.position = "fixed";
         } else {
-          bar.style.position = 'sticky';
+          bar.style.position = "sticky";
         }
       });
     </script>

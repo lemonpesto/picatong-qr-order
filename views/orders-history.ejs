@@ -23,10 +23,12 @@
           </div>
           <% order.items.forEach(item => { %>
           <div class="order-item">
-            <span class="item-name"> <%= item.menuName %> x<%= item.qty %> </span>
-            <% if (item.comment) { %>
-            <p class="subtext comment"><%= item.comment %></p>
-            <% } %>
+            <div class="left-item">
+              <span class="item-name"> <%= item.menuName %> x<%= item.qty %> </span>
+              <% if (item.comment) { %>
+              <span class="subtext comment"><%= item.comment %></span>
+              <% }%>
+            </div>
             <span class="item-price"> <%= (item.price * item.qty).toLocaleString() %>원 </span>
           </div>
           <% }) %>

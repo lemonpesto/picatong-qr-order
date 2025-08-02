@@ -26,12 +26,12 @@
           <div class="order-items">
             <ul>
               <% order.items.forEach(item => { %>
-              <li data-menu-id="<%= item.menuId %>">
+              <li data-menu-id="<%= item.menuId %>" data-comment="<%= item.comment || '' %>">
                 <label>
                   <input type="checkbox" class="cook-checkbox" <%= item.cooked ? 'checked' : '' %> />
                   <span class="item-text"><%= item.menuName %> x<%= item.qty %> </span>
                   <% if (item.comment) { %>
-                  <p class="subtext comment"><%= item.comment %></p>
+                  <span class="subtext comment"><%= item.comment %></span>
                   <% } %>
                 </label>
               </li>
@@ -84,9 +84,11 @@
           // 2) 체크박스 이벤트
           card.addEventListener("change", (e) => {
             if (!e.target.matches(".cook-checkbox")) return;
-            const menuId = e.target.closest("li").dataset.menuId;
+            const li = e.target.closest("li");
+            const menuId = li.dataset.menuId;
+            const comment = li.dataset.comment || "";
             const url = e.target.checked ? "/admin/kitchen/item-cooked" : "/admin/kitchen/item-uncook";
-            postJSON(url, { orderId, menuId });
+            postJSON(url, { orderId, menuId, comment });
           });
 
           // 3) 요리완성 버튼
@@ -131,10 +133,11 @@
                 ${items
                   .map(
                     (i) =>
-                      `<li data-menu-id="${i.menuId}">
+                      `<li data-menu-id="${i.menuId}" data-comment="${i.comment || ""}">
                     <label>
                       <input type="checkbox" class="cook-checkbox" />
                       <span class="item-text">${i.menuName} x${i.qty}</span>
+                      ${item.comment ? `<span class="subtext comment">${item.comment}</span>` : ""}
                     </label>
                   </li>`
                   )
@@ -150,13 +153,15 @@
           updateNotice();
         });
 
-        // 2) 개별 메뉴 조리 토글
-        socket.on("itemCooked", ({ orderId, menuId }) => {
-          const chk = container.querySelector(`.order-card[data-order-id="${orderId}"] li[data-menu-id="${menuId}"] .cook-checkbox`);
+        // 개별 메뉴 조리 토글
+        socket.on("itemCooked", ({ orderId, menuId, comment }) => {
+          comment = comment || "";
+          const chk = container.querySelector(`.order-card[data-order-id="${orderId}"] li[data-menu-id="${menuId}"][data-comment="${comment.replace(/"/g, "&quot;")}"] .cook-checkbox`);
           if (chk) chk.checked = true;
         });
-        socket.on("itemUncooked", ({ orderId, menuId }) => {
-          const chk = container.querySelector(`.order-card[data-order-id="${orderId}"] li[data-menu-id="${menuId}"] .cook-checkbox`);
+        socket.on("itemUncooked", ({ orderId, menuId, comment }) => {
+          comment = comment || "";
+          const chk = container.querySelector(`.order-card[data-order-id="${orderId}"] li[data-menu-id="${menuId}"][data-comment="${comment.replace(/"/g, "&quot;")}"] .cook-checkbox`);
           if (chk) chk.checked = false;
         });
 

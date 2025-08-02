@@ -203,6 +203,7 @@ app.post("/cart/add", async (요청, 응답) => {
   응답.send("메뉴를 추가했습니다.");
 });
 
+// 카트 내 메뉴 총 개수, 총 금액 반환
 app.get("/cart/summary", async (요청, 응답) => {
   try {
     const tableId = 요청.user._id;

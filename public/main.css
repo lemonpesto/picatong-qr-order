@@ -368,12 +368,9 @@ a {
 }
 
 .subtext.comment {
-  margin: 2px 0 0 0;
-  font-size: 0.96em;
-  color: #666;
-  opacity: 0.95;
-  font-style: italic;
-  white-space: pre-line;
+  font-size: 14px;
+  color: #888;
+  padding: 0 4px;
 }
 
 /* 주문 내역 페이지 */
