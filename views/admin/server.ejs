@@ -33,9 +33,7 @@
           <div class="order-header">
             <div class="left-header">
               <span class="table-num">T<%= order.tableNum %></span>
-              <span class="time"
-                ><%= new Date(order.requestedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) %></span
-              >
+              <span class="time"><%= new Date(order.requestedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) %></span>
             </div>
             <button type="submit" class="btn-delete">삭제</button>
           </div>
@@ -60,9 +58,7 @@
           <div class="order-header">
             <div class="left-header">
               <span class="table-num">T<%= order.tableNum %></span>
-              <span class="time"
-                ><%= new Date(order.requestedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) %></span
-              >
+              <span class="time"><%= new Date(order.requestedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) %></span>
             </div>
           </div>
           <div class="order-items">
@@ -77,10 +73,7 @@
               <% }) %>
             </ul>
           </div>
-          <div class="serve-order-footer">
-            <input type="button" class="btn-serve-complete" value="서빙완료" <%= order.items.every(i => !i.manufacturing || i.cooked) ? '' :
-            'disabled' %> />
-          </div>
+          <div class="serve-order-footer"><input type="button" class="btn-serve-complete" value="서빙완료" <%= order.items.some(i => i.manufacturing && !i.cooked) ? 'disabled' : '' %> /></div>
         </div>
         <% }) %>
         <div id="serve-notice" class="inline-action <%= serveOrders.length > 0 ? 'hidden' : '' %>">
@@ -94,10 +87,10 @@
     <script>
       (function () {
         const socket = io();
-        const tabs = { paid: '#tab-paid', serve: '#tab-serve' };
-        const lists = { paid: '#paid-list', serve: '#serve-list' };
-        const notices = { paid: '#paid-notice', serve: '#serve-notice' };
-        const filterBtns = '.filter-btn';
+        const tabs = { paid: "#tab-paid", serve: "#tab-serve" };
+        const lists = { paid: "#paid-list", serve: "#serve-list" };
+        const notices = { paid: "#paid-notice", serve: "#serve-notice" };
+        const filterBtns = ".filter-btn";
 
         // --- 요소 참조 ---
         const $ = (sel) => document.querySelector(sel);
@@ -111,133 +104,133 @@
 
         // --- 탭 전환 ---
         function showTab(type) {
-          paidTab.classList.toggle('active', type === 'paid');
-          serveTab.classList.toggle('active', type === 'serve');
-          paidList.classList.toggle('hidden', type !== 'paid');
-          serveList.classList.toggle('hidden', type !== 'serve');
+          paidTab.classList.toggle("active", type === "paid");
+          serveTab.classList.toggle("active", type === "serve");
+          paidList.classList.toggle("hidden", type !== "paid");
+          serveList.classList.toggle("hidden", type !== "serve");
         }
-        paidTab.addEventListener('click', () => showTab('paid'));
-        serveTab.addEventListener('click', () => showTab('serve'));
+        paidTab.addEventListener("click", () => showTab("paid"));
+        serveTab.addEventListener("click", () => showTab("serve"));
 
         // --- 공지 업데이트 ---
         function updateNotices() {
-          paidNotice.classList.toggle('hidden', paidList.querySelectorAll('.order-card').length);
-          serveNotice.classList.toggle('hidden', serveList.querySelectorAll('.order-card').length);
+          paidNotice.classList.toggle("hidden", paidList.querySelectorAll(".order-card").length);
+          serveNotice.classList.toggle("hidden", serveList.querySelectorAll(".order-card").length);
         }
 
         // --- 공통 액션 핸들러 ---
-        async function handleAction(url, card, queryKey = 'id') {
+        async function handleAction(url, card, queryKey = "id") {
           try {
             const id = card.dataset[queryKey];
-            const res = await fetch(`${url}?${queryKey}=${id}`, { method: 'POST' });
+            const res = await fetch(`${url}?${queryKey}=${id}`, { method: "POST" });
             const msg = await res.text();
             showToast(msg);
             card.remove();
             updateNotices();
           } catch {
-            showToast('요청 중 오류가 발생했습니다.');
+            showToast("요청 중 오류가 발생했습니다.");
           }
         }
 
         // --- 버튼 이벤트 위임: 송금확인 & 삭제 ---
-        paidList.addEventListener('click', (e) => {
-          const card = e.target.closest('.order-card');
+        paidList.addEventListener("click", (e) => {
+          const card = e.target.closest(".order-card");
           if (!card) return;
-          if (e.target.matches('.btn-confirm-payment')) handleAction('/admin/server/confirm', card);
-          if (e.target.matches('.btn-delete') && confirm('주문을 취소하시겠습니까?')) handleAction('/admin/server/delete', card);
+          if (e.target.matches(".btn-confirm-payment")) handleAction("/admin/server/confirm", card);
+          if (e.target.matches(".btn-delete") && confirm("주문을 취소하시겠습니까?")) handleAction("/admin/server/delete", card);
         });
 
         // --- 버튼 이벤트 위임: 서빙완료 ---
-        serveList.addEventListener('click', (e) => {
-          const card = e.target.closest('.order-card');
-          if (e.target.matches('.btn-serve-complete')) handleAction('/admin/server/serve-order', card, 'orderId');
+        serveList.addEventListener("click", (e) => {
+          const card = e.target.closest(".order-card");
+          if (e.target.matches(".btn-serve-complete")) handleAction("/admin/server/serve-order", card, "orderId");
         });
 
-        document.addEventListener('click', (e) => {
-          if (e.target.matches('.btn-serve-complete')) {
-            const id = e.target.closest('.order-card').dataset.id;
-            socket.emit('serveComplete', id);
+        document.addEventListener("click", (e) => {
+          if (e.target.matches(".btn-serve-complete")) {
+            const id = e.target.closest(".order-card").dataset.id;
+            socket.emit("serveComplete", id);
           }
         });
 
         // --- 테이블 필터링 ---
         let selectedTables = new Set();
         $$(filterBtns).forEach((btn) => {
-          btn.addEventListener('click', () => {
+          btn.addEventListener("click", () => {
             const table = btn.dataset.table;
-            if (table === 'all') {
+            if (table === "all") {
               selectedTables.clear();
-              $$(filterBtns).forEach((b) => b.classList.remove('active'));
-              btn.classList.add('active');
+              $$(filterBtns).forEach((b) => b.classList.remove("active"));
+              btn.classList.add("active");
             } else {
-              document.querySelector('[data-table="all"]').classList.remove('active');
-              btn.classList.toggle('active');
+              document.querySelector('[data-table="all"]').classList.remove("active");
+              btn.classList.toggle("active");
               selectedTables.has(table) ? selectedTables.delete(table) : selectedTables.add(table);
             }
-            $$('.order-card').forEach((card) => {
-              card.style.display = selectedTables.size === 0 || selectedTables.has(card.dataset.table) ? '' : 'none';
+            $$(".order-card").forEach((card) => {
+              card.style.display = selectedTables.size === 0 || selectedTables.has(card.dataset.table) ? "" : "none";
             });
           });
         });
 
         // --- Socket.IO 연결 & 초기화 ---
-        socket.on('connect', () => {
-          serveList.querySelectorAll('.order-card').forEach((card) => {
-            socket.emit('joinOrderRoom', card.dataset.orderId);
+        socket.on("connect", () => {
+          serveList.querySelectorAll(".order-card").forEach((card) => {
+            socket.emit("joinOrderRoom", card.dataset.orderId);
           });
           updateNotices();
         });
 
         // --- 실시간 이벤트 수신 & 카드 생성 ---
-        socket.on('newOrder', (order) => {
+        socket.on("newOrder", (order) => {
           paidList.prepend(createPaidCard(order));
           updateNotices();
         });
 
-        socket.on('orderPaid', (order) => {
+        socket.on("orderPaid", (order) => {
           serveList.prepend(createServeCard(order));
-          socket.emit('joinOrderRoom', order._id);
+          socket.emit("joinOrderRoom", order._id);
           updateNotices();
         });
 
-        socket.on('itemCooked', ({ orderId, menuId }) => {
+        socket.on("itemCooked", ({ orderId, menuId }) => {
           const card = serveList.querySelector(`[data-order-id="${orderId}"]`);
           if (!card) return;
           const chk = card.querySelector(`li[data-menu-id="${menuId}"] .serve-checkbox`);
           chk.disabled = false;
-          if ([...card.querySelectorAll('.serve-checkbox')].every((c) => !c.disabled)) card.querySelector('.btn-serve-complete').disabled = false;
+          if ([...card.querySelectorAll(".serve-checkbox")].every((c) => !c.disabled)) card.querySelector(".btn-serve-complete").disabled = false;
         });
 
-        socket.on('itemUncooked', ({ orderId, menuId }) => {
+        socket.on("itemUncooked", ({ orderId, menuId }) => {
           const card = serveList.querySelector(`[data-order-id="${orderId}"]`);
           if (!card) return;
           const chk = card.querySelector(`li[data-menu-id="${menuId}"] .serve-checkbox`);
           chk.disabled = true;
           chk.checked = false;
-          card.querySelector('.btn-serve-complete').disabled = true;
+          card.querySelector(".btn-serve-complete").disabled = true;
         });
 
-        socket.on('orderCooked', (orderId) => {
+        socket.on("orderCooked", (orderId) => {
           const card = serveList.querySelector(`[data-order-id="${orderId}"]`);
           if (!card) return;
-          card.querySelectorAll('.serve-checkbox').forEach((c) => (c.disabled = false));
-          card.querySelector('.btn-serve-complete').disabled = false;
+          card.querySelectorAll(".serve-checkbox").forEach((c) => (c.disabled = false));
+          card.querySelector(".btn-serve-complete").disabled = false;
         });
 
         // --- 카드 생성 함수들 ---
         function createPaidCard(o) {
-          const c = document.createElement('div');
-          c.className = 'order-card';
+          const c = document.createElement("div");
+          c.className = "order-card";
           c.dataset.table = o.tableNum;
           c.dataset.id = o._id;
           c.innerHTML = `
             <div class="order-header">
               <div class="left-header">
                 <span class="table-num">T${o.tableNum}</span>
-                <span class="time">${new Date(o.requestedAt).toLocaleTimeString('ko-KR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
+                <span class="time">${new Date(o.requestedAt).toLocaleTimeString("ko-KR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
                 })}</span>
 
               </div>
@@ -245,7 +238,7 @@
             </div>
             <div class="order-items">
               <p class="items-list collapsed">
-                ${o.items.map((i) => `${i.menuName} x${i.qty}`).join(', ')}
+                ${o.items.map((i) => `${i.menuName} x${i.qty}`).join(", ")}
               </p>
             </div>
             <div class="paid-order-footer">
@@ -256,18 +249,18 @@
         }
 
         function createServeCard(o) {
-          const c = document.createElement('div');
-          c.className = 'order-card';
+          const c = document.createElement("div");
+          c.className = "order-card";
           c.dataset.table = o.tableNum;
           c.dataset.orderId = o._id;
           c.innerHTML = `
             <div class="order-header">
               <div class="left-header">
               <span class="table-num">T${o.tableNum}</span>
-              <span class="time">${new Date(o.requestedAt).toLocaleTimeString('ko-KR', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
+              <span class="time">${new Date(o.requestedAt).toLocaleTimeString("ko-KR", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
               })}</span>
               </div>
             </div>
@@ -279,17 +272,17 @@
                   <li data-menu-id="${item.menuId}">
                     <label>
                       <input type="checkbox" class="serve-checkbox"
-                        ${!item.manufacturing ? '' : 'disabled'} />
+                        ${!item.manufacturing ? "" : "disabled"} />
                       <span class="item-text">${item.menuName} x${item.qty}</span>
                     </label>
                   </li>`
                   )
-                  .join('')}
+                  .join("")}
               </ul>
             </div>
             <div class="serve-order-footer">
               <input type="button" class="btn-serve-complete" value="서빙완료"
-                ${o.items.every((i) => !i.manufacturing || i.cooked) ? '' : 'disabled'} />
+                ${o.items.some((i) => i.manufacturing && !i.cooked) ? "disabled" : ""} />
             </div>`;
           return c;
         }

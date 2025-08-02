@@ -25,14 +25,11 @@
           <div class="order-header">
             <div class="left-header">
               <span class="table-num">T<%= order.tableNum %></span>
-              <span class="time">
-                <%= new Date(order.requestedAt) .toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) %>
-              </span>
+              <span class="time"> <%= new Date(order.requestedAt) .toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) %> </span>
             </div>
             <div class="right-header">
               <span class="order-status <%= order.served ? 'status-served' : 'status-pending' %>">
-                <% if (!order.paid) { %> 송금확인 전 <% } else if (!order.completed) { %> 조리 중 <% } else if (!order.served) { %> 서빙 중 <% } else
-                { %> 서빙 완료 <% } %>
+                <% if (!order.paid) { %> 송금확인 전 <% } else if (!order.completed) { %> 조리 중 <% } else if (!order.served) { %> 서빙 중 <% } else { %> 서빙 완료 <% } %>
               </span>
             </div>
           </div>
@@ -65,72 +62,42 @@
     <script>
       (function () {
         const socket = io();
-        const filterBtns = '.filter-btn';
+        const filterBtns = ".filter-btn";
+        const orderList = document.querySelector(".order-list");
+        const notice = document.getElementById("orders-notice");
         const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-        const orderList = document.querySelector('.order-list');
-        const notice = document.getElementById('orders-notice');
 
-        socket.on('connect', () => {
+        socket.on("connect", () => {
           // 기존 주문 카드들 모두 room 에 join
-          document.querySelectorAll('.order-card').forEach((card) => {
-            socket.emit('joinOrderRoom', card.dataset.id);
+          document.querySelectorAll(".order-card").forEach((card) => {
+            socket.emit("joinOrderRoom", card.dataset.id);
           });
-        });
-
-        // --- 테이블 필터링 ---
-        $$(filterBtns).forEach((btn) => {
-          btn.addEventListener('click', () => {
-            const table = btn.dataset.table;
-            if (table === 'all') {
-              $$(filterBtns).forEach((b) => b.classList.remove('active'));
-              btn.classList.add('active');
-            } else {
-              document.querySelector('[data-table="all"]').classList.remove('active');
-              btn.classList.toggle('active');
-            }
-            const activeTables = new Set(
-              $$(filterBtns)
-                .filter((b) => b.classList.contains('active'))
-                .map((b) => b.dataset.table)
-                .filter((t) => t !== 'all')
-            );
-            $$('.order-card').forEach((card) => {
-              card.style.display = activeTables.size === 0 || activeTables.has(card.dataset.table) ? '' : 'none';
-            });
-          });
-        });
-
-        // --- 새 주문 알림 (실시간 반영) ---
-        socket.on('newOrder', (order) => {
-          // “주문 내역이 없습니다” 숨기기
-          notice.classList.add('hidden');
-
-          // 카드 생성 후 상단에 추가
-          const card = createOrderCard(order);
-          orderList.prepend(card);
         });
 
         // 주문 카드 생성 함수
         function createOrderCard(o) {
-          const c = document.createElement('div');
-          c.className = 'order-card';
+          const statusText = !o.paid ? "송금확인 전" : !o.completed ? "조리 중" : !o.served ? "서빙 중" : "서빙 완료";
+
+          const badgeClass = o.served ? "status-served" : "status-pending";
+
+          const c = document.createElement("div");
+          c.className = "order-card";
           c.dataset.table = o.tableNum;
           c.dataset.id = o._id;
           c.innerHTML = `
             <div class="order-header">
               <div class="left-header">
                 <span class="table-num">T${o.tableNum}</span>
-                <span class="time">${new Date(o.requestedAt).toLocaleTimeString('ko-KR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
+                <span class="time">${new Date(o.requestedAt).toLocaleTimeString("ko-KR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
                 })}</span>
               </div>
               <div class="right-header">
-                <span class="order-status ${o.served ? 'status-served' : 'status-pending'}">${statusText}</span>
+                <span class="order-status ${o.served ? "status-served" : "status-pending"}">${statusText}</span>
               </div>
             </div>
-            
             <div class="order-items">
               ${o.items
                 .map(
@@ -145,7 +112,7 @@
                 </div>
               `
                 )
-                .join('')}
+                .join("")}
             </div>
             <div class="order-footer">
               <span>합계</span>
@@ -155,36 +122,57 @@
             </div>`;
           return c;
         }
-        // --- 주문 상태 업데이트 함수 ---
-        function updateStatus(id, text) {
-          const card = document.querySelector(`.order-card[data-id="${id}"]`);
-          if (!card) return;
-          const statusElem = card.querySelector('.order-status');
-          if (!statusElem) return;
 
-          // 텍스트 교체
-          statusElem.textContent = text;
+        // --- 테이블 필터링 ---
+        $$(filterBtns).forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const table = btn.dataset.table;
+            if (table === "all") {
+              $$(filterBtns).forEach((b) => b.classList.remove("active"));
+              btn.classList.add("active");
+            } else {
+              document.querySelector('[data-table="all"]').classList.remove("active");
+              btn.classList.toggle("active");
+            }
+            const activeTables = new Set(
+              $$(filterBtns)
+                .filter((b) => b.classList.contains("active"))
+                .map((b) => b.dataset.table)
+                .filter((t) => t !== "all")
+            );
+            $$(".order-card").forEach((card) => {
+              card.style.display = activeTables.size === 0 || activeTables.has(card.dataset.table) ? "" : "none";
+            });
+          });
+        });
 
-          // 클래스 토글
-          const isServed = text === '서빙 완료';
-          statusElem.classList.toggle('status-served', isServed);
-          statusElem.classList.toggle('status-pending', !isServed);
+        // 서버에서 최신 주문을 가져와 화면에 다시 그려주는 함수
+        async function refreshOrderList() {
+          try {
+            const res = await fetch("/admin/orders/data");
+            const { orders } = await res.json();
+            // 1) 기존 리스트 비우기
+            orderList.innerHTML = "";
+            // 2) 데이터 없으면 안내 문구만
+            if (!orders.length) {
+              notice.classList.remove("hidden");
+            } else {
+              notice.classList.add("hidden");
+              // 3) 카드 생성 & 삽입
+              orders.forEach((o) => orderList.append(createOrderCard(o)));
+            }
+            // 4) 방별 join (실시간 하위 이벤트 수신용)
+            orders.forEach((o) => socket.emit("joinOrderRoom", o._id));
+          } catch (err) {
+            console.error("주문 목록 로드 실패", err);
+          }
         }
-        // --- 실시간 상태 변경 반영 ---
-        // 1) 송금확인 되면 → 조리 중
-        socket.on('orderPaid', (order) => {
-          updateStatus(order._id, '조리 중');
-        });
 
-        // 2) 조리 완료되면 → 서빙 중
-        socket.on('orderCooked', (orderId) => {
-          updateStatus(orderId, '서빙 중');
-        });
+        // 최초 한 번 로드
+        refreshOrderList();
 
-        // 3) 서빙 완료되면 → 서빙 완료
-        socket.on('orderServed', (orderId) => {
-          updateStatus(orderId, '서빙 완료');
-        });
+        // orders 컬렉션 실시간 변화 이벤트에 대해 refresh 호출
+        ["newOrder", "orderPaid", "orderCooked", "orderServed", "orderCancelled"].forEach((evt) => socket.on(evt, refreshOrderList));
       })();
     </script>
   </body>

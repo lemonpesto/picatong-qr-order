@@ -1,10 +1,10 @@
 @font-face {
-  font-family: 'Pretendard';
+  font-family: "Pretendard";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: local('Pretendard Regular'), local('Pretendard-Regular'), url('/fonts/Pretendard-Regular.woff2') format('woff2'),
-    url('/fonts/Pretendard-Regular.woff') format('woff'), url('/fonts/Pretendard-Regular.ttf') format('truetype');
+  src: local("Pretendard Regular"), local("Pretendard-Regular"), url("/fonts/Pretendard-Regular.woff2") format("woff2"), url("/fonts/Pretendard-Regular.woff") format("woff"),
+    url("/fonts/Pretendard-Regular.ttf") format("truetype");
 }
 
 /* 전역 폰트 설정 */
@@ -12,7 +12,7 @@ body,
 input,
 button,
 textarea {
-  font-family: 'Pretendard', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Pretendard", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 * {
@@ -147,6 +147,7 @@ a {
   display: flex;
   justify-content: center;
   align-items: center;
+  margin: 4px 0;
 }
 
 .order-header {
@@ -171,11 +172,11 @@ a {
 .server-page .order-card .btn-confirm-payment,
 .btn-serve-complete,
 .complete-order-btn {
-  padding: 4px 12px;
+  padding: 6px 12px;
   font-size: 14px;
   font-weight: 600;
   border: none;
-  border-radius: 9999px;
+  border-radius: 2px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
 }
@@ -194,7 +195,7 @@ a {
 .btn-serve-complete:enabled,
 .complete-order-btn {
   background: #007bff;
-  box-shadow: 0 4px 0 #0069da;
+  /* box-shadow: 0 4px 0 #0069da; */
   color: #fff;
 }
 .btn-serve-complete {
@@ -202,7 +203,7 @@ a {
 }
 .btn-serve-complete:disabled {
   background: #ddd; /* 연한 회색 배경 */
-  box-shadow: 0 4px 0 #c3c3c3;
+  /* box-shadow: 0 4px 0 #c3c3c3; */
   color: #777; /* 진하지 않은 회색 글자 */
   cursor: not-allowed; /* 클릭 불가 커서 */
   opacity: 1; /* opacity 조절 대신 배경·글자색으로 구분 */
@@ -231,7 +232,7 @@ a {
 }
 
 /* 체크되면 회색 + 취소선 */
-.order-items input[type='checkbox']:checked + .item-text {
+.order-items input[type="checkbox"]:checked + .item-text {
   color: #999;
   text-decoration: line-through;
 }
@@ -271,7 +272,7 @@ a {
 
 /* active 상태일 때 하단 언더라인 */
 .server-tabs button.active::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   bottom: -1px; /* border-bottom 두께만큼 살짝 내려줌 */
@@ -330,7 +331,7 @@ a {
 .order-card {
   position: relative;
   background: #fff;
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 12px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
@@ -417,12 +418,11 @@ a {
   font-size: 14px;
 }
 
-.order-status.status-served {
-  color: green;
-}
-
-.order-status.status-pending {
+.status-pending {
   color: red;
+}
+.status-served {
+  color: green;
 }
 /* 메뉴 편집 */
 

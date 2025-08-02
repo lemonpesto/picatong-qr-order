@@ -20,9 +20,7 @@
           <div class="order-header">
             <div class="left-header">
               <span class="table-num">T<%= order.tableNum %></span>
-              <span class="time"
-                ><%= new Date(order.requestedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) %></span
-              >
+              <span class="time"><%= new Date(order.requestedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) %></span>
             </div>
           </div>
           <div class="order-items">
@@ -52,25 +50,25 @@
     <script src="/toast.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      document.addEventListener('DOMContentLoaded', () => {
+      document.addEventListener("DOMContentLoaded", () => {
         const socket = io();
-        const container = document.querySelector('.kitchen-page');
-        const notice = document.getElementById('kitchen-notice');
+        const container = document.querySelector(".kitchen-page");
+        const notice = document.getElementById("kitchen-notice");
 
         // ── 헬퍼 ──
         const postJSON = (url, data) =>
           fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
           });
 
         // ── 공지 토글 ──
         function updateNotice() {
-          const count = container.querySelectorAll('.order-card').length;
+          const count = container.querySelectorAll(".order-card").length;
           // 주문이 하나라도 있으면 숨기고, 없으면 보이게
-          if (count > 0) notice.classList.add('hidden');
-          else notice.classList.remove('hidden');
+          if (count > 0) notice.classList.add("hidden");
+          else notice.classList.remove("hidden");
           // notice.classList.toggle('hidden', count > 0);
         }
 
@@ -78,20 +76,20 @@
         function bindCard(card) {
           const orderId = card.dataset.orderId;
           // 1) 방 참가
-          socket.emit('joinOrderRoom', orderId);
+          socket.emit("joinOrderRoom", orderId);
 
           // 2) 체크박스 이벤트
-          card.addEventListener('change', (e) => {
-            if (!e.target.matches('.cook-checkbox')) return;
-            const menuId = e.target.closest('li').dataset.menuId;
-            const url = e.target.checked ? '/admin/kitchen/item-cooked' : '/admin/kitchen/item-uncook';
+          card.addEventListener("change", (e) => {
+            if (!e.target.matches(".cook-checkbox")) return;
+            const menuId = e.target.closest("li").dataset.menuId;
+            const url = e.target.checked ? "/admin/kitchen/item-cooked" : "/admin/kitchen/item-uncook";
             postJSON(url, { orderId, menuId });
           });
 
           // 3) 요리완성 버튼
-          card.querySelector('.complete-order-btn').addEventListener('click', async () => {
-            card.querySelectorAll('.cook-checkbox').forEach((c) => (c.checked = true));
-            const res = await postJSON('/admin/kitchen/complete-order', { orderId });
+          card.querySelector(".complete-order-btn").addEventListener("click", async () => {
+            card.querySelectorAll(".cook-checkbox").forEach((c) => (c.checked = true));
+            const res = await postJSON("/admin/kitchen/complete-order", { orderId });
             const msg = await res.text();
             showToast(msg);
             card.remove();
@@ -100,27 +98,27 @@
         }
 
         // ── 초기 바인딩 & 공지 ──
-        container.querySelectorAll('.order-card').forEach(bindCard);
+        container.querySelectorAll(".order-card").forEach(bindCard);
         updateNotice();
 
         // ── Socket 이벤트 ──
 
         // 1) 결제 확인(주방 대상) 주문
-        socket.on('orderPaid', (order) => {
+        socket.on("orderPaid", (order) => {
           const items = order.items.filter((i) => i.manufacturing);
           if (!items.length) return;
 
-          const card = document.createElement('div');
-          card.className = 'order-card';
+          const card = document.createElement("div");
+          card.className = "order-card";
           card.dataset.orderId = order._id;
           card.innerHTML = `
             <div class="order-header">
               <div class="left-header">
                 <span class="table-num">T${order.tableNum}</span>
-                <span class="time">${new Date(order.requestedAt).toLocaleTimeString('ko-KR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
+                <span class="time">${new Date(order.requestedAt).toLocaleTimeString("ko-KR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
                 })}</span>
                 
               </div>
@@ -137,7 +135,7 @@
                     </label>
                   </li>`
                   )
-                  .join('')}
+                  .join("")}
               </ul>
             </div>
             <div class="kitchen-order-footer">
@@ -150,17 +148,17 @@
         });
 
         // 2) 개별 메뉴 조리 토글
-        socket.on('itemCooked', ({ orderId, menuId }) => {
+        socket.on("itemCooked", ({ orderId, menuId }) => {
           const chk = container.querySelector(`.order-card[data-order-id="${orderId}"] li[data-menu-id="${menuId}"] .cook-checkbox`);
           if (chk) chk.checked = true;
         });
-        socket.on('itemUncooked', ({ orderId, menuId }) => {
+        socket.on("itemUncooked", ({ orderId, menuId }) => {
           const chk = container.querySelector(`.order-card[data-order-id="${orderId}"] li[data-menu-id="${menuId}"] .cook-checkbox`);
           if (chk) chk.checked = false;
         });
 
         // 3) 전체 주문 완료(카드 제거)
-        socket.on('orderCooked', (orderId) => {
+        socket.on("orderCooked", (orderId) => {
           const card = container.querySelector(`.order-card[data-order-id="${orderId}"]`);
           if (card) {
             card.remove();
@@ -169,9 +167,9 @@
         });
 
         // 4) 재접속 시 기존 카드들도 방에 다시 참가
-        socket.on('connect', () => {
-          container.querySelectorAll('.order-card').forEach((card) => {
-            socket.emit('joinOrderRoom', card.dataset.orderId);
+        socket.on("connect", () => {
+          container.querySelectorAll(".order-card").forEach((card) => {
+            socket.emit("joinOrderRoom", card.dataset.orderId);
           });
         });
       });
