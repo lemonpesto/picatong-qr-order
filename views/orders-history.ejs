@@ -19,7 +19,7 @@
           <!-- 섹션 헤더: 제목 + 시간 -->
           <div class="section-header">
             <span class="section-title"> <%= idx === 0 ? '최근 주문' : '이전 주문' %> </span>
-            <span class="order-time"> <%= new Date(order.requestedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) %> </span>
+            <span class="order-time" data-time="<%= new Date(order.requestedAt).getTime() %>"></span>
           </div>
           <% order.items.forEach(item => { %>
           <div class="order-item">
@@ -43,4 +43,10 @@
       <% } %>
     </div>
   </body>
+  <script>
+    document.querySelectorAll(".order-time").forEach((span) => {
+      const t = parseInt(span.dataset.time, 10);
+      span.textContent = new Date(t).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+    });
+  </script>
 </html>
